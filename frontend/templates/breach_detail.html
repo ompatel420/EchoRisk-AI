@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ breach.breach_title }} — Breach Incident Dossier | EchoRisk AI</title>
+  <meta name="description" content="Detailed cybersecurity incident dossier and exposure report for {{ breach.breach_title }}. Learn what data was leaked and defensive actions to protect your account.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='assets/logo.png') }}">
+</head>
+<body class="breach-detail-page">
+  <!-- Background Glow Accents -->
+  <div class="bg-glow bg-glow-left" aria-hidden="true"></div>
+  <div class="bg-glow bg-glow-right" aria-hidden="true"></div>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar" role="banner">
+    <div class="nav-container">
+      <a href="/" class="brand" aria-label="EchoRisk AI Home">
+        <div class="brand-logo-wrapper">
+          <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="EchoRisk AI Logo" width="44" height="44" class="brand-logo">
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">EchoRisk <span class="brand-accent">AI</span></span>
+          <span class="brand-tagline">Email Data Breach Tracker</span>
+        </div>
+      </a>
+
+      <nav class="nav-links" id="main-nav-links" aria-label="Main Navigation">
+        <a href="/" class="nav-link" id="nav-home">Home</a>
+        <a href="/#how-it-works" class="nav-link" id="nav-how">How It Works</a>
+        <a href="/#passwords" class="nav-link" id="nav-passwords">Passwords</a>
+        <a href="/#about" class="nav-link" id="nav-about">About</a>
+      </nav>
+
+      <div class="nav-actions">
+        <button type="button" class="btn btn-notify" id="open-notify-modal-btn" aria-haspopup="dialog">
+          <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          <span>Notify Me</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Dossier Content -->
+  <main class="main-wrapper breach-dossier-wrapper" id="main-content">
+    
+    <!-- Top Action & Breadcrumb Navigation -->
+    <div class="dossier-nav-bar">
+      <a href="/" class="btn-back-scanner" aria-label="Return to Email Scanner">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        <span>Back to Scanner</span>
+      </a>
+
+      <div class="dossier-breadcrumbs" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span class="breadcrumb-sep">/</span>
+        <span>Breach Dossier</span>
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-current">{{ breach.breach_title }}</span>
+      </div>
+    </div>
+
+    <!-- Breach Incident Header Hero Card (Matching Image 1) -->
+    <article class="dossier-card dossier-hero-card">
+      <div class="dossier-identity-block">
+        <div class="dossier-logo-container" title="{{ breach.breach_title }} Platform Icon">
+          <img 
+            src="{{ breach.logo_url }}" 
+            alt="{{ breach.breach_title }} Logo" 
+            class="dossier-company-logo"
+            loading="lazy"
+            onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';"
+          >
+          <div class="breach-logo-monogram" style="display:none;" aria-hidden="true">
+            {{ (breach.breach_title[0] if breach.breach_title else 'B') | upper }}
+          </div>
+        </div>
+
+        <div class="dossier-title-col">
+          <h1 class="dossier-main-title">{{ breach.breach_title }}</h1>
+          {% if breach.domain %}
+          <span class="dossier-domain-text">{{ breach.domain }}</span>
+          {% endif %}
+        </div>
+      </div>
+    </article>
+
+    <!-- 5 Metrics Cards Grid -->
+    <div class="dossier-stat-grid">
+      <!-- Card 1: Exposed Records -->
+      <div class="dossier-stat-card">
+        <div class="dossier-stat-top">
+          <span class="dossier-stat-num">{{ breach.formatted_pwn_count }}</span>
+        </div>
+        <span class="dossier-stat-label">EXPOSED RECORDS</span>
+      </div>
+
+      <!-- Card 2: Incident Date (3rd image: 2022-07-01 with 4th image: 4 years ago at bottom) -->
+      <div class="dossier-stat-card">
+        <div class="dossier-stat-top">
+          <span class="dossier-stat-num date-val">{{ breach.breach_date }}</span>
+        </div>
+        <span class="dossier-stat-label">INCIDENT DATE</span>
+        {% if breach.years_ago %}
+        <span class="dossier-stat-sub">{{ breach.years_ago }}</span>
+        {% endif %}
+      </div>
+
+      <!-- Card 3: Credentials Status (Matching 2nd image: ✓ No Passwords in Leak) -->
+      <div class="dossier-stat-card">
+        <div class="dossier-stat-top">
+          <span class="dossier-status-val {% if breach.has_password_exposure %}danger{% else %}safe{% endif %}">
+            {% if breach.has_password_exposure %}
+            &#9888; Passwords in Leak
+            {% else %}
+            &#10003; No Passwords in Leak
+            {% endif %}
+          </span>
+        </div>
+        <span class="dossier-stat-label">CREDENTIALS STATUS</span>
+      </div>
+
+      <!-- Card 4: Record Verification (Matching 2nd image: ✓ Confirmed Breach) -->
+      <div class="dossier-stat-card">
+        <div class="dossier-stat-top">
+          <span class="dossier-status-val verified">
+            &#10003; Confirmed Breach
+          </span>
+        </div>
+        <span class="dossier-stat-label">RECORD VERIFICATION</span>
+      </div>
+
+      <!-- Card 5: Industry (Popcorn Icon + Entertainment) -->
+      <div class="dossier-stat-card">
+        <div class="dossier-stat-top">
+          <div class="dossier-industry-icon-box">
+            {% if breach.industry_type == 'entertainment' %}
+            <!-- Popcorn Container Icon matching Image 1 -->
+            <svg class="industry-svg" width="38" height="38" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Bucket Base -->
+              <path d="M12 19H36L32.8 43H15.2L12 19Z" fill="#EF4444" stroke="#DC2626" stroke-width="2" stroke-linejoin="round"/>
+              <!-- White Stripes -->
+              <path d="M17.5 19.5L19 42.5M28.5 19.5L27 42.5" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+              <path d="M23 19.5V42.5" stroke="#FFFFFF" stroke-width="3"/>
+              <!-- Badge with Star -->
+              <circle cx="23" cy="31" r="5" fill="#F59E0B" stroke="#B45309" stroke-width="1"/>
+              <path d="M23 28L23.9 29.8L25.9 30.1L24.4 31.5L24.8 33.5L23 32.5L21.2 33.5L21.6 31.5L20.1 30.1L22.1 29.8L23 28Z" fill="#FFFFFF"/>
+              <!-- Fluffy Popcorn Kernels on Top -->
+              <path d="M13 19C11 19 9.5 17 10.5 14C11.5 11 15 11.5 16 13.5C17.5 9.5 21 8.5 23.5 11C25 8 29 8 30.5 11.5C32.5 9.5 36 10.5 36.5 14C37.5 17 35.5 19 33.5 19" fill="#FBBF24" stroke="#D97706" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="18" cy="12.5" r="3" fill="#FDE68A"/>
+              <circle cx="28.5" cy="11.5" r="3" fill="#FDE68A"/>
+              <circle cx="23" cy="14" r="2.5" fill="#FEF3C7"/>
+            </svg>
+            {% elif breach.industry_type == 'technology' or breach.industry_type == 'creative' %}
+            <svg class="industry-svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+            {% elif breach.industry_type == 'social' %}
+            <svg class="industry-svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            {% else %}
+            <svg class="industry-svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+              <polyline points="2 17 12 22 22 17"></polyline>
+              <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+            {% endif %}
+          </div>
+          <span class="dossier-stat-num industry-val">{{ breach.industry }}</span>
+        </div>
+        <span class="dossier-stat-label">INDUSTRY</span>
+      </div>
+    </div>
+
+    <!-- Meta disclosure note matching Image 1 -->
+    <div class="dossier-meta-stamp">
+      <span>Cataloged in EchoRisk AI Threat Intelligence &middot; Verified breach exposure record</span>
+    </div>
+
+    <!-- Incident Dossier Narrative Card -->
+    <section class="dossier-card">
+      <div class="dossier-card-header">
+        <h2 class="dossier-section-title">About This Breach</h2>
+      </div>
+
+      <div class="dossier-narrative-text">
+        <p>{{ breach.description }}</p>
+      </div>
+
+      <!-- Exposed Data Types Breakdown -->
+      <div class="dossier-exposed-box">
+        <h3 class="dossier-subheading">Platform Data Fields Exposed in this Breach</h3>
+        <p class="dossier-subtext">The following categories of subscriber information were published or circulated online:</p>
+        
+        <div class="dossier-chips-group">
+          {% for item in breach.exposed_data %}
+            <span class="chip-mini {% if 'password' in item | lower or 'hash' in item | lower %}pwd{% endif %}">
+              {% if 'password' in item | lower or 'hash' in item | lower %}&#128274;{% endif %}
+              {{ item }}
+            </span>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <!-- Technical Threat Analysis & Actionable Countermeasures -->
+    <section class="dossier-card">
+      <div class="dossier-card-header">
+        <div class="dossier-icon-pill">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            <polyline points="9 11 12 14 22 4"></polyline>
+          </svg>
+        </div>
+        <h2 class="dossier-section-title">Recommended Defensive Countermeasures</h2>
+      </div>
+
+      <p class="dossier-subtext">
+        If you held an active account with <strong>{{ breach.breach_title }}</strong> around {{ breach.breach_date }}, 
+        we strongly advise executing the following defensive countermeasures immediately:
+      </p>
+
+      <ul class="dossier-actions-list">
+        {% for rec in breach.recommendations %}
+        <li class="dossier-action-item">
+          <div class="dossier-action-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <span class="dossier-action-text">{{ rec }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <!-- Quick CTA & Intelligence Note -->
+    <div class="dossier-cta-bar">
+      <div class="dossier-cta-content">
+        <h3 class="dossier-cta-title">Concerned about your other accounts?</h3>
+        <p class="dossier-cta-subtitle">Scan any email address completely free and private with EchoRisk AI.</p>
+      </div>
+      <a href="/#hero" class="btn btn-execute btn-dossier-scan">
+        <span>Scan Another Email Now</span>
+        <svg class="btn-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14"></path>
+          <path d="m12 5 7 7-7 7"></path>
+        </svg>
+      </a>
+    </div>
+
+    <!-- Security Intelligence Disclaimer -->
+    <div class="report-attribution-box" style="margin-top: 2rem;">
+      <p>
+        EchoRisk AI Incident Intelligence Record — Verified against global threat intelligence and disclosure repositories. 
+        EchoRisk AI does not store scanned email addresses or user identities on its servers.
+      </p>
+    </div>
+
+  </main>
+
+  <!-- Notify Me Modal Dialog -->
+  <div class="modal-backdrop hidden" id="notify-modal" role="dialog" aria-modal="true" aria-labelledby="notify-modal-title">
+    <div class="modal-card">
+      <button type="button" class="modal-close-btn" id="close-notify-modal-btn" aria-label="Close dialog">&times;</button>
+      <div class="modal-icon-header">
+        <div class="modal-icon-circle">
+          <svg class="modal-bell-svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+        </div>
+        <h3 id="notify-modal-title" class="modal-title">Get Notified of New Breaches</h3>
+        <p class="modal-subtitle">Register your email to receive early security warnings if your credentials appear in newly published breaches.</p>
+      </div>
+
+      <form class="modal-form" id="notify-form" autocomplete="off" novalidate>
+        <div class="modal-input-group">
+          <label for="notify-email-input" class="sr-only">Notification email</label>
+          <input 
+            type="text" 
+            inputmode="email"
+            id="notify-email-input" 
+            name="notify_email" 
+            placeholder="Enter your email for security alerts" 
+            required
+            autocomplete="off"
+          >
+        </div>
+        <div class="modal-feedback" id="notify-feedback"></div>
+        <button type="submit" class="btn btn-primary btn-block" id="notify-submit-btn">
+          <span>Subscribe for Alerts</span>
+        </button>
+        <p class="modal-privacy-note">We never spam. You can unsubscribe at any time.</p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container" aria-live="polite"></div>
+
+  <!-- Footer -->
+  <footer class="footer" role="contentinfo">
+    <div class="footer-container">
+      <div class="footer-card-box">
+        <div class="footer-links-group">
+          <h4 class="footer-nav-title">Quick Links</h4>
+          <ul class="footer-links-list">
+            <li><a href="/">Home</a></li>
+            <li><a href="/#how-it-works">How It Works</a></li>
+            <li><a href="/#passwords">Passwords</a></li>
+            <li><a href="/#about">About & Privacy</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-divider-vertical" aria-hidden="true"></div>
+
+        <div class="footer-provider-info">
+          <h4 class="footer-nav-title">Data & Intelligence</h4>
+          <p class="footer-attribution-text">
+            Email breaches and password exposure verified via threat intelligence databases.
+          </p>
+          <div class="privacy-pill">
+            <span>&#128274; Zero Permanent Data Retention</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

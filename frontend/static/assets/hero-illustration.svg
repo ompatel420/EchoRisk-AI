@@ -1,0 +1,103 @@
+<svg width="460" height="340" viewBox="0 0 460 340" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Soft background aura -->
+    <linearGradient id="aura_grad" x1="80" y1="40" x2="380" y2="300" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EDE9FE" stop-opacity="0.85"/>
+      <stop offset="0.6" stop-color="#F5F3FF" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#EDE9FE" stop-opacity="0.2"/>
+    </linearGradient>
+
+    <!-- Shield gradient -->
+    <linearGradient id="shield_grad" x1="330" y1="80" x2="410" y2="220" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8B5CF6"/>
+      <stop offset="0.4" stop-color="#7C3AED"/>
+      <stop offset="1" stop-color="#6D28D9"/>
+    </linearGradient>
+
+    <!-- Envelope border gradient -->
+    <linearGradient id="envelope_border" x1="80" y1="100" x2="340" y2="280" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#6D28D9"/>
+    </linearGradient>
+
+    <!-- Drop shadows -->
+    <filter id="shield_shadow" x="300" y="70" width="130" height="170" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#6D28D9" flood-opacity="0.32"/>
+    </filter>
+    
+    <filter id="env_shadow" x="60" y="80" width="310" height="230" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#8B5CF6" flood-opacity="0.15"/>
+    </filter>
+
+    <style>
+      @keyframes raySparkle {
+        0%, 100% { opacity: 0.35; stroke-dashoffset: 0; transform: scale(0.92); }
+        50% { opacity: 1; stroke-dashoffset: 2; transform: scale(1.12); stroke: #8B5CF6; }
+      }
+      @keyframes dotBlink {
+        0%, 100% { opacity: 0.3; transform: translateY(0); }
+        50% { opacity: 0.9; transform: translateY(-3px); }
+      }
+      @keyframes auraFlow {
+        0%, 100% { transform: scale(0.96) translate(6px, 4px); opacity: 0.75; }
+        50% { transform: scale(1.03) translate(-4px, -3px); opacity: 0.95; }
+      }
+      @keyframes shieldGleam {
+        0%, 100% { filter: drop-shadow(0 8px 14px rgba(109, 40, 217, 0.28)); }
+        50% { filter: drop-shadow(0 14px 22px rgba(139, 92, 246, 0.45)); }
+      }
+      .anim-ray { transform-origin: 395px 85px; animation: raySparkle 2.6s ease-in-out infinite; }
+      .anim-ray-2 { animation-delay: 0.6s; }
+      .anim-ray-3 { animation-delay: 1.2s; }
+      .anim-dot { animation: dotBlink 3s ease-in-out infinite; }
+      .anim-dot-2 { animation-delay: 1s; }
+      .anim-dot-3 { animation-delay: 1.8s; }
+      .anim-aura { transform-origin: 240px 180px; animation: auraFlow 5s ease-in-out infinite alternate; }
+      .anim-shield { animation: shieldGleam 3.5s ease-in-out infinite; }
+    </style>
+  </defs>
+
+  <!-- Organic Background Aura Cloud -->
+  <path class="anim-aura" d="M120 180C90 100 180 50 260 60C340 70 410 110 400 190C390 270 320 310 230 300C140 290 150 260 120 180Z" fill="url(#aura_grad)"/>
+
+  <!-- Radiance Accent Rays & Sparkles above shield -->
+  <line class="anim-ray" x1="375" y1="65" x2="375" y2="78" stroke="#7C3AED" stroke-width="3" stroke-linecap="round"/>
+  <line class="anim-ray anim-ray-2" x1="400" y1="72" x2="411" y2="82" stroke="#7C3AED" stroke-width="3" stroke-linecap="round"/>
+  <line class="anim-ray anim-ray-3" x1="416" y1="95" x2="428" y2="101" stroke="#7C3AED" stroke-width="3" stroke-linecap="round"/>
+  
+  <circle class="anim-dot" cx="340" cy="74" r="2.5" fill="#8B5CF6"/>
+  <circle class="anim-dot anim-dot-2" cx="424" cy="120" r="2.5" fill="#8B5CF6"/>
+  <circle class="anim-dot anim-dot-3" cx="110" cy="115" r="3" fill="#DDD6FE"/>
+  <circle class="anim-dot anim-dot-2" cx="390" cy="270" r="3.5" fill="#DDD6FE"/>
+
+  <!-- Main Envelope Group -->
+  <g filter="url(#env_shadow)">
+    <!-- Envelope Body (White with purple stroke) -->
+    <rect x="80" y="105" width="270" height="175" rx="24" fill="#FFFFFF" stroke="url(#envelope_border)" stroke-width="3.5"/>
+    
+    <!-- Envelope Flap Creases (Purple Lines) -->
+    <path d="M82 118L215 205C218 207 222 207 225 205L348 118" stroke="url(#envelope_border)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Subtle bottom creases -->
+    <path d="M84 270L150 215" stroke="#C4B5FD" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="1 1"/>
+    <path d="M346 270L285 215" stroke="#C4B5FD" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="1 1"/>
+  </g>
+
+  <!-- Front Shield Badge with Lock -->
+  <g class="anim-shield" filter="url(#shield_shadow)">
+    <!-- Shield shape -->
+    <path d="M365 88L320 106V148C320 182 342 214 365 224C388 214 410 182 410 148V106L365 88Z" fill="url(#shield_grad)"/>
+    
+    <!-- Shield inner highlight border -->
+    <path d="M365 93L325 109V148C325 178 344 207 365 217C386 207 405 178 405 148V109L365 93Z" stroke="#DDD6FE" stroke-width="1.5" stroke-opacity="0.6"/>
+
+    <!-- Padlock on Shield -->
+    <!-- Shackle -->
+    <path d="M356 148V138C356 132.5 360 128 365 128C370 128 374 132.5 374 138V148" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round"/>
+    <!-- Padlock Body -->
+    <rect x="350" y="148" width="30" height="24" rx="5" fill="#FFFFFF"/>
+    <!-- Keyhole -->
+    <circle cx="365" cy="158" r="2.8" fill="#6D28D9"/>
+    <path d="M365 160.8V166" stroke="#6D28D9" stroke-width="2.6" stroke-linecap="round"/>
+  </g>
+</svg>
