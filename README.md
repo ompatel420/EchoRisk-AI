@@ -1,5 +1,7 @@
 # EchoRisk AI — Email Data Breach Tracker
 
+Email Data Breach Tracker
+
 > A modern, privacy-first cybersecurity web application that checks whether an email address has been compromised in known data breaches, explains the exposure risk using Claude AI, and delivers practical defensive recommendations.
 
 ![EchoRisk AI Banner](frontend/static/assets/hero-illustration.svg)
