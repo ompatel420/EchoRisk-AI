@@ -301,6 +301,18 @@ body {
   flex-shrink: 0;
 }
 
+.btn-notify.ringing {
+  animation: bellRing 0.5s ease-in-out;
+}
+
+@keyframes bellRing {
+  0%, 100% { transform: rotate(0); }
+  20% { transform: rotate(12deg); }
+  40% { transform: rotate(-12deg); }
+  60% { transform: rotate(6deg); }
+  80% { transform: rotate(-6deg); }
+}
+
 .btn-notify:focus-visible {
   outline: 2px solid var(--border-focus);
   outline-offset: 3px;
@@ -464,15 +476,6 @@ body {
 
 .dot-green {
   background: #34D399;
-}
-
-.terminal-title {
-  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #374151;
-  margin-left: 0.75rem;
-  letter-spacing: -0.01em;
 }
 
 .terminal-status {
@@ -753,7 +756,6 @@ body {
   border-color: var(--primary-purple);
 }
 
-
 /* Hero Right Visual & Dynamic Animations */
 .hero-visual {
   display: flex;
@@ -838,7 +840,6 @@ body {
   transform: translateY(-6px) scale(0.98);
   filter: drop-shadow(0 16px 24px rgba(109, 40, 217, 0.2));
 }
-
 
 /* ==========================================================================
    Scan Loading / Radar Animation State
@@ -2556,12 +2557,10 @@ body {
     justify-content: center;
   }
 
-
   .hero-visual {
     order: -1;
     margin-top: 0;
   }
-
 
   .steps-grid {
     grid-template-columns: 1fr;
@@ -2804,13 +2803,6 @@ body {
   gap: 0.35rem;
 }
 
-.dossier-badge-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
 .dossier-main-title {
   font-family: var(--font-heading);
   font-size: clamp(1.85rem, 3.2vw, 2.4rem);
@@ -2819,37 +2811,6 @@ body {
   letter-spacing: -0.03em;
   line-height: 1.15;
   margin: 0.2rem 0;
-}
-
-.dossier-tagline {
-  font-size: 0.95rem;
-  color: var(--text-secondary);
-  font-weight: 400;
-}
-
-.dossier-threat-badge-container {
-  flex-shrink: 0;
-}
-
-.threat-level-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.45rem 1rem;
-  border-radius: var(--radius-pill);
-  font-family: var(--font-heading);
-  font-size: 0.88rem;
-  font-weight: 700;
-  border: 1.5px solid currentColor;
-  background: #FFFFFF;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
-}
-
-.threat-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  animation: pulse-dot 2s infinite ease-in-out;
 }
 
 .dossier-domain-text {
@@ -2960,31 +2921,6 @@ body {
   font-style: italic;
   color: #94A3B8;
   margin-top: 0.2rem;
-}
-
-.dossier-risk-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  padding: 0.45rem 1.35rem;
-  border-radius: 999px;
-  font-family: var(--font-heading);
-  font-size: 0.95rem;
-  font-weight: 700;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-}
-
-.dossier-risk-pill.risk-unknown {
-  background: #FEF3C7;
-  color: #92400E;
-  border: 1.5px solid #FCD34D;
-}
-
-.dossier-risk-pill.risk-high {
-  background: #FEE2E2;
-  color: #DC2626;
-  border: 1.5px solid #FECACA;
 }
 
 .dossier-industry-icon-box {
@@ -3216,8 +3152,15 @@ body.print-active .btn {
 
 @media print {
   @page {
-    margin: 1.2cm 1cm 1.2cm 1cm;
+    margin: 1.2cm 1cm;
     size: auto;
+  }
+
+  *, *::before, *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
   }
 
   html, body {
@@ -3228,113 +3171,48 @@ body.print-active .btn {
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
-    height: auto !important;
-    overflow: visible !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
   }
 
-  /* 1. HIDE ALL DIRECT SIBLINGS OF .main-wrapper */
-  body > *:not(.main-wrapper) {
-    display: none !important;
-    visibility: hidden !important;
-    height: 0 !important;
-    max-height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-  }
-
-  /* 2. EXPLICITLY HIDE HEADER, NAVBAR, FOOTER, ABOUT, MODALS, BUTTONS */
+  /* Hide screen chrome & interactive sections */
+  body > *:not(.main-wrapper),
   header,
-  header.navbar,
   .navbar,
-  .nav-container,
-  .nav-links,
-  .nav-actions,
-  #open-notify-modal-btn,
   footer,
-  footer.footer,
   .footer,
-  .footer-container,
-  .footer-card-box,
-  .footer-links-group,
-  .footer-provider-info,
   .about-section,
-  #about,
   .how-it-works-section,
-  #how-it-works,
   .password-audit-section,
-  #passwords,
   .hero-section,
-  #hero,
   .scan-loading-section,
-  #scan-loading,
   .modal-backdrop,
-  #notify-modal,
   .toast-container,
   .bg-glow,
   .report-actions-top,
-  #btn-scan-another,
-  #btn-print-report,
-  .breach-reference-link,
-  button,
   .btn,
+  button,
   .demo-helpers,
-  .privacy-note {
-    display: none !important;
-    visibility: hidden !important;
-    height: 0 !important;
-    min-height: 0 !important;
-    max-height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-    position: static !important;
-    border: none !important;
-  }
-
-  /* 3. IN .main-wrapper, HIDE EVERY SECTION EXCEPT .report-section */
-  .main-wrapper > *:not(.report-section) {
-    display: none !important;
-    visibility: hidden !important;
-    height: 0 !important;
-    max-height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-  }
-
-  .main-wrapper {
-    display: block !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    max-width: 100% !important;
-    width: 100% !important;
-  }
-
-  .report-section {
-    display: block !important;
-    visibility: visible !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-  }
-
-  /* Hide report section if not active */
+  .privacy-note,
+  .btn-back-scanner,
+  .dossier-cta-bar,
   .report-section.hidden {
     display: none !important;
   }
 
-  .report-container {
+  .main-wrapper {
     max-width: 100% !important;
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
   }
 
-  /* 3. PRINT-ONLY EXECUTIVE HEADER */
+  .report-section {
+    display: block !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Executive Print Header */
   .print-only-header {
     display: flex !important;
     justify-content: space-between !important;
@@ -3342,8 +3220,8 @@ body.print-active .btn {
     border-bottom: 2px solid #6D28D9 !important;
     padding-bottom: 0.6rem !important;
     margin-bottom: 0.9rem !important;
-    page-break-after: avoid !important;
-    break-after: avoid !important;
+    page-break-after: avoid;
+    break-after: avoid;
   }
 
   .print-header-brand {
@@ -3362,7 +3240,6 @@ body.print-active .btn {
     font-weight: 800 !important;
     color: #4C1D95 !important;
     margin: 0 !important;
-    line-height: 1.2 !important;
   }
 
   .print-brand-sub {
@@ -3374,78 +3251,24 @@ body.print-active .btn {
   .print-header-timestamp {
     font-size: 8pt !important;
     color: #64748B !important;
-    text-align: right !important;
     font-weight: 600 !important;
+    text-align: right !important;
   }
 
-  /* 4. REPORT STATUS HEADER & TARGET */
-  .report-header-card {
+  /* Cards Layout & Avoid Awkward Page Breaks */
+  .report-header-card,
+  .ai-report-card,
+  .recommendations-card,
+  .dossier-card {
     border: 1px solid #CBD5E1 !important;
     background: #FFFFFF !important;
     border-radius: 8px !important;
     padding: 0.9rem 1.1rem !important;
     margin-bottom: 0.85rem !important;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-    box-shadow: none !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
-  .report-status-header {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    margin-bottom: 0.75rem !important;
-  }
-
-  .status-badge {
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 5px !important;
-    padding: 3px 9px !important;
-    border-radius: 5px !important;
-    font-weight: 700 !important;
-    font-size: 9pt !important;
-    border: 1px solid currentColor !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  .status-badge.clean,
-  .status-badge.low {
-    color: #047857 !important;
-    background: #ECFDF5 !important;
-    border-color: #A7F3D0 !important;
-  }
-
-  .status-badge.critical,
-  .status-badge.high {
-    color: #B91C1C !important;
-    background: #FEF2F2 !important;
-    border-color: #FECACA !important;
-  }
-
-  .status-badge.moderate,
-  .status-badge.medium {
-    color: #B45309 !important;
-    background: #FFFBEB !important;
-    border-color: #FDE68A !important;
-  }
-
-  .masked-target-pill {
-    display: inline-flex !important;
-    align-items: center !important;
-    padding: 3px 9px !important;
-    border-radius: 5px !important;
-    font-size: 8.5pt !important;
-    font-weight: 600 !important;
-    color: #334155 !important;
-    background: #F1F5F9 !important;
-    border: 1px solid #CBD5E1 !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  /* 5. METRICS GRID */
   .metrics-grid {
     display: grid !important;
     grid-template-columns: repeat(4, 1fr) !important;
@@ -3453,441 +3276,30 @@ body.print-active .btn {
   }
 
   .metric-card {
+    border: 1px solid #E2E8F0 !important;
+    background: #F8FAFC !important;
+    border-radius: 6px !important;
     padding: 0.6rem 0.75rem !important;
-    border: 1px solid #E2E8F0 !important;
-    background: #F8FAFC !important;
-    border-radius: 6px !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
-
-  .metric-label {
-    font-size: 7.5pt !important;
-    color: #64748B !important;
-    text-transform: uppercase !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.03em !important;
-    display: block !important;
-    margin-bottom: 3px !important;
-  }
-
-  .metric-big-number {
-    font-size: 15pt !important;
-    font-weight: 800 !important;
-    color: #0F172A !important;
-  }
-
-  .metric-subtext {
-    font-size: 7.5pt !important;
-    color: #64748B !important;
-    margin-left: 3px !important;
-  }
-
-  .risk-badge,
-  .pwd-flag-badge {
-    display: inline-block !important;
-    padding: 2px 7px !important;
-    border-radius: 4px !important;
-    font-size: 8pt !important;
-    font-weight: 700 !important;
-    border: 1px solid currentColor !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  .score-number {
-    font-size: 13pt !important;
-    font-weight: 800 !important;
-  }
-
-  .score-max {
-    font-size: 8pt !important;
-    color: #64748B !important;
-  }
-
-  .score-bar-mini {
-    height: 5px !important;
-    background: #E2E8F0 !important;
-    border-radius: 3px !important;
-    overflow: hidden !important;
-    margin-top: 3px !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  .score-bar-fill {
-    height: 100% !important;
-    background: #6D28D9 !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  /* 6. AI RISK ANALYSIS CARD */
-  .ai-report-card {
-    border: 1px solid #CBD5E1 !important;
-    background: #FFFFFF !important;
-    border-radius: 8px !important;
-    padding: 0.9rem 1.1rem !important;
-    margin-bottom: 0.85rem !important;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-    box-shadow: none !important;
-  }
-
-  .ai-card-header {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    margin-bottom: 0.5rem !important;
-  }
-
-  .ai-tag {
-    display: flex !important;
-    align-items: center !important;
-    gap: 5px !important;
-    font-size: 10.5pt !important;
-    font-weight: 700 !important;
-    color: #4C1D95 !important;
-  }
-
-  .ai-mode-pill {
-    font-size: 7pt !important;
-    padding: 2px 6px !important;
-    border-radius: 4px !important;
-    border: 1px solid #DDD6FE !important;
-    background: #F5F3FF !important;
-    color: #6D28D9 !important;
-    font-weight: 600 !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  .ai-summary-text {
-    font-size: 9pt !important;
-    line-height: 1.4 !important;
-    color: #1E293B !important;
-    margin: 0.35rem 0 0.6rem 0 !important;
-  }
-
-  .findings-box {
-    border: 1px solid #E2E8F0 !important;
-    background: #F8FAFC !important;
-    border-radius: 6px !important;
-    padding: 0.6rem 0.8rem !important;
-    margin-bottom: 0.6rem !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  .findings-title,
-  .categories-title {
-    font-size: 8pt !important;
-    font-weight: 700 !important;
-    color: #334155 !important;
-    margin-bottom: 0.3rem !important;
-  }
-
-  .findings-list {
-    margin: 0 !important;
-    padding-left: 1rem !important;
-  }
-
-  .findings-list li {
-    font-size: 8.5pt !important;
-    line-height: 1.35 !important;
-    color: #334155 !important;
-    margin-bottom: 0.2rem !important;
-  }
-
-  .chips-container {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 4px !important;
-  }
-
-  .category-chip {
-    display: inline-flex !important;
-    font-size: 7.5pt !important;
-    padding: 2px 6px !important;
-    border-radius: 3px !important;
-    border: 1px solid #CBD5E1 !important;
-    background: #F1F5F9 !important;
-    color: #334155 !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  .ai-disclaimer {
-    font-size: 7.5pt !important;
-    font-style: italic !important;
-    color: #64748B !important;
-    margin-top: 0.5rem !important;
-    margin-bottom: 0 !important;
-  }
-
-  /* 7. DETAILED BREACHES LIST (IF BREACHES DETECTED) */
-  .breaches-section {
-    margin-bottom: 0.85rem !important;
-    page-break-before: auto !important;
-  }
-
-  .section-subheading-row {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    margin-bottom: 0.5rem !important;
-  }
-
-  .section-title {
-    font-size: 11pt !important;
-    font-weight: 700 !important;
-    color: #0F172A !important;
-    margin: 0 !important;
-  }
-
-  .breach-counter-badge {
-    font-size: 7.5pt !important;
-    padding: 2px 6px !important;
-    border-radius: 4px !important;
-    border: 1px solid #CBD5E1 !important;
-    background: #F1F5F9 !important;
-    color: #475569 !important;
-    font-weight: 700 !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
   .breach-card {
     border: 1px solid #CBD5E1 !important;
     background: #FFFFFF !important;
     border-radius: 8px !important;
-    padding: 0.8rem 0.95rem !important;
+    padding: 0.85rem 1rem !important;
     margin-bottom: 0.65rem !important;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-    box-shadow: none !important;
-  }
-
-  .breach-card-top {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: flex-start !important;
-    gap: 0.65rem !important;
-    margin-bottom: 0.45rem !important;
-  }
-
-  .breach-identity-row {
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.6rem !important;
-  }
-
-  .breach-logo-wrapper {
-    width: 28px !important;
-    height: 28px !important;
-    border-radius: 5px !important;
-    border: 1px solid #E2E8F0 !important;
-    background: #F8FAFC !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    flex-shrink: 0 !important;
-    overflow: hidden !important;
-  }
-
-  .breach-company-logo {
-    max-width: 22px !important;
-    max-height: 22px !important;
-    object-fit: contain !important;
-  }
-
-  .breach-logo-monogram {
-    font-size: 10pt !important;
-    font-weight: 800 !important;
-    color: #6D28D9 !important;
-  }
-
-  .breach-company-name {
-    font-size: 10.5pt !important;
-    font-weight: 700 !important;
-    color: #0F172A !important;
-    margin: 0 !important;
-    display: inline-block !important;
-  }
-
-  .breach-domain-tag,
-  .breach-date-tag,
-  .breach-accounts-tag,
-  .breach-platform-badge,
-  .breach-industry-tag {
-    font-size: 7pt !important;
-    padding: 1px 5px !important;
-    border-radius: 3px !important;
-    border: 1px solid #CBD5E1 !important;
-    background: #F1F5F9 !important;
-    color: #475569 !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 3px !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  .breach-header-meta {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: flex-end !important;
-    gap: 2px !important;
-  }
-
-  .breach-description-text {
-    font-size: 8pt !important;
-    line-height: 1.35 !important;
-    color: #334155 !important;
-    margin: 0.35rem 0 0.45rem 0 !important;
-    word-break: break-word !important;
-  }
-
-  .breach-meta-footer {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    padding-top: 0.35rem !important;
-    border-top: 1px solid #F1F5F9 !important;
-  }
-
-  .breach-exposed-section {
-    display: flex !important;
-    align-items: center !important;
-    flex-wrap: wrap !important;
-    gap: 3px !important;
-  }
-
-  .breach-exposed-label {
-    font-size: 7.5pt !important;
-    font-weight: 600 !important;
-    color: #64748B !important;
-  }
-
-  .chip-mini {
-    font-size: 7pt !important;
-    padding: 1px 5px !important;
-    border-radius: 3px !important;
-    border: 1px solid #CBD5E1 !important;
-    background: #F8FAFC !important;
-    color: #334155 !important;
-    display: inline-block !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  .chip-mini.pwd {
-    border-color: #FECACA !important;
-    background: #FEF2F2 !important;
-    color: #B91C1C !important;
-    font-weight: 700 !important;
-  }
-
-  .breach-reference-link {
-    font-size: 7.5pt !important;
-    font-weight: 600 !important;
-    color: #6D28D9 !important;
-    text-decoration: none !important;
-    border: 1px solid #DDD6FE !important;
-    background: #F5F3FF !important;
-    padding: 2px 6px !important;
-    border-radius: 3px !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  /* 8. RECOMMENDED DEFENSIVE ACTIONS */
-  .recommendations-card {
-    border: 1px solid #CBD5E1 !important;
-    background: #FFFFFF !important;
-    border-radius: 8px !important;
-    padding: 0.9rem 1.1rem !important;
-    margin-bottom: 0.85rem !important;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-    box-shadow: none !important;
-  }
-
-  .rec-header {
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.65rem !important;
-    margin-bottom: 0.55rem !important;
-  }
-
-  .rec-icon-wrapper {
-    width: 24px !important;
-    height: 24px !important;
-    border-radius: 5px !important;
-    background: #F5F3FF !important;
-    border: 1px solid #DDD6FE !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    flex-shrink: 0 !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  .rec-title {
-    font-size: 10.5pt !important;
-    font-weight: 700 !important;
-    color: #0F172A !important;
-    margin: 0 !important;
-  }
-
-  .rec-subtitle {
-    font-size: 7.5pt !important;
-    color: #64748B !important;
-    margin: 2px 0 0 0 !important;
-  }
-
-  .actions-checklist {
-    list-style: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 0.35rem !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
   .action-item {
-    display: flex !important;
-    align-items: flex-start !important;
-    gap: 0.5rem !important;
-    padding: 0.45rem 0.7rem !important;
-    border: 1px solid #E2E8F0 !important;
-    background: #F8FAFC !important;
-    border-radius: 5px !important;
-    font-size: 8pt !important;
-    line-height: 1.35 !important;
-    color: #1E293B !important;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
-  .action-checkbox-icon {
-    width: 14px !important;
-    height: 14px !important;
-    border-radius: 3px !important;
-    background: #EDE9FE !important;
-    color: #6D28D9 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    flex-shrink: 0 !important;
-    margin-top: 1px !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
+  .chip-mini, .category-chip {
+    border: 1px solid #CBD5E1 !important;
   }
 }
-

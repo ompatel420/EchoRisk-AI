@@ -132,8 +132,12 @@ def analyze_risk_with_claude(breach_facts: Dict[str, Any]) -> Dict[str, Any]:
             messages=[{"role": "user", "content": f"Verified Breach Evidence:\n{json.dumps(verified_payload, indent=2)}"}]
         )
 
-        text = message.content[0].text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
-        parsed = json.loads(text)
+        raw_text = message.content[0].text.strip()
+        if "{" in raw_text and "}" in raw_text:
+            json_str = raw_text[raw_text.find("{"):raw_text.rfind("}") + 1]
+        else:
+            json_str = raw_text.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+        parsed = json.loads(json_str)
         parsed["ai_powered"] = True
         parsed["fallback_used"] = False
         return parsed

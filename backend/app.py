@@ -14,21 +14,26 @@ if BACKEND_DIR not in sys.path:
     sys.path.insert(0, BACKEND_DIR)
 
 FRONTEND_DIR = os.path.join(PROJECT_ROOT, "frontend")
-TEMPLATE_DIR = os.path.join(FRONTEND_DIR, "templates") if os.path.isdir(os.path.join(FRONTEND_DIR, "templates")) else os.path.join(BACKEND_DIR, "templates")
-STATIC_DIR = os.path.join(FRONTEND_DIR, "static") if os.path.isdir(os.path.join(FRONTEND_DIR, "static")) else os.path.join(BACKEND_DIR, "static")
+TEMPLATE_DIR = os.path.join(FRONTEND_DIR, "templates")
+STATIC_DIR = os.path.join(FRONTEND_DIR, "static")
 
 # Load environment configuration
-for env_path in [os.path.join(PROJECT_ROOT, ".env"), os.path.join(BACKEND_DIR, ".env")]:
-    if os.path.exists(env_path):
-        load_dotenv(dotenv_path=env_path)
-        break
+env_path = os.path.join(PROJECT_ROOT, ".env")
+if os.path.exists(env_path):
+    load_dotenv(dotenv_path=env_path)
 else:
     load_dotenv()
 
-from utils.validators import validate_and_normalize_email, mask_email
-from services.breach_service import check_email_breaches, get_breach_detail
-from services.ai_service import analyze_risk_with_claude
-from services.report_service import assemble_final_report
+try:
+    from backend.utils.validators import validate_and_normalize_email, mask_email
+    from backend.services.breach_service import check_email_breaches, get_breach_detail
+    from backend.services.ai_service import analyze_risk_with_claude
+    from backend.services.report_service import assemble_final_report
+except ImportError:
+    from utils.validators import validate_and_normalize_email, mask_email
+    from services.breach_service import check_email_breaches, get_breach_detail
+    from services.ai_service import analyze_risk_with_claude
+    from services.report_service import assemble_final_report
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("echorisk-backend")

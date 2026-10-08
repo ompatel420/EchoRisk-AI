@@ -11,13 +11,19 @@ EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
 DOMAIN_ALIASES = {
     "protonmial.com": "proton.me",
     "protonmai.com": "proton.me",
-    "protonmail.com": "proton.me",
-    "proton.cm": "proton.me"
+    "proton.cm": "proton.me",
+    "gmial.com": "gmail.com",
+    "gmai.com": "gmail.com",
+    "gamil.com": "gmail.com",
+    "hotmial.com": "hotmail.com",
+    "yaho.com": "yahoo.com",
+    "outlok.com": "outlook.com"
 }
 
 POPULAR_DOMAINS = [
     "gmail.com", "yahoo.com", "hotmail.com", "outlook.com",
-    "icloud.com", "proton.me", "protonmail.com", "aol.com", "zoho.com"
+    "icloud.com", "proton.me", "protonmail.com", "aol.com", "zoho.com",
+    "mail.com", "live.com", "msn.com", "gmx.com", "yandex.com"
 ]
 
 ALLOWED_TEST_DOMAINS = {"example.com", "example.org", "example.net", "test.com", "localhost"}
@@ -83,22 +89,21 @@ def validate_and_normalize_email(raw_email: Optional[str]) -> Tuple[bool, Option
     if not re.match(r"^[a-zA-Z]{2,}$", tld):
         return False, None, f"Invalid domain extension '.{tld}'. Please enter a valid email.", None
 
-    # Check for domain alias or typo suggestion
+    if not EMAIL_REGEX.match(cleaned):
+        return False, None, "Please enter a valid email address (e.g., name@domain.com).", None
+
+    # Check known typo aliases first
     if domain in DOMAIN_ALIASES:
         suggested = f"{user}@{DOMAIN_ALIASES[domain]}"
         return False, None, f"Invalid email domain '@{domain}'. Did you mean '{suggested}'?", suggested
 
-    if domain not in POPULAR_DOMAINS and domain not in ALLOWED_TEST_DOMAINS:
+    is_dns_valid, dns_err = check_domain_dns(domain)
+    if not is_dns_valid:
+        # Check if the non-resolving domain was a typo of a popular provider
         for popular in POPULAR_DOMAINS:
             if levenshtein_distance(domain, popular) <= 2:
                 suggested = f"{user}@{popular}"
                 return False, None, f"Invalid email domain '@{domain}'. Did you mean '{suggested}'?", suggested
-
-    if not EMAIL_REGEX.match(cleaned):
-        return False, None, "Please enter a valid email address (e.g., name@domain.com).", None
-
-    is_dns_valid, dns_err = check_domain_dns(domain)
-    if not is_dns_valid:
         return False, None, dns_err, None
 
     return True, f"{user}@{domain}".lower(), None, None

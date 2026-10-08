@@ -134,7 +134,7 @@ def _normalize_breach_detail(breach_id: str, catalog: Dict[str, Dict[str, Any]])
     title = meta.get("breachID") or meta.get("breach_title") or meta.get("title") or fb.get("title") or clean_id
     domain = meta.get("domain") or fb.get("domain") or f"{key.replace(' ', '')}.com"
     raw_date = meta.get("breachedDate") or meta.get("breach_date") or meta.get("date") or fb.get("date") or "Unknown Date"
-    date_str = str(raw_date).split("T")[0]
+    date_str = str(raw_date).split("T")[0] if raw_date and str(raw_date).lower() != "none" else "Unknown Date"
     pwn_count = meta.get("exposedRecords") or meta.get("pwn_count") or meta.get("records") or fb.get("pwn_count") or 0
     desc = meta.get("exposureDescription") or meta.get("description") or fb.get("description") or f"Data from {title} was identified in compromised records on public databases."
     industry = meta.get("industry") or meta.get("category") or fb.get("industry") or _detect_industry(key)
@@ -144,7 +144,7 @@ def _normalize_breach_detail(breach_id: str, catalog: Dict[str, Dict[str, Any]])
     if isinstance(raw_exposed, str):
         exposed = [x.strip() for x in raw_exposed.split(";") if x.strip()]
     elif isinstance(raw_exposed, list):
-        exposed = [str(x).strip() for x in raw_exposed]
+        exposed = [str(x).strip() for x in raw_exposed if str(x).strip()]
     else:
         exposed = ["Email Addresses"]
 
@@ -279,14 +279,22 @@ def check_email_breaches(normalized_email: str) -> Dict[str, Any]:
         except Exception:
             return _empty_breach_response("error", "Invalid response from breach intelligence provider.")
 
-        if not isinstance(data, dict):
+        if not isinstance(data, dict) or data.get("Error") == "Not found":
             return _empty_breach_response("success", "No matching breaches found in checked source.")
 
         raw_breaches = data.get("breaches", [])
         breach_names: List[str] = []
         if raw_breaches and isinstance(raw_breaches, list):
-            first = raw_breaches[0]
-            breach_names = [str(x).strip() for x in (first if isinstance(first, list) else raw_breaches) if x]
+            for item in raw_breaches:
+                if isinstance(item, list):
+                    for sub in item:
+                        s = str(sub).strip()
+                        if s and s not in breach_names:
+                            breach_names.append(s)
+                elif item:
+                    s = str(item).strip()
+                    if s and s not in breach_names:
+                        breach_names.append(s)
 
         if not breach_names:
             return _empty_breach_response("success", "No matching breaches found in checked source.")

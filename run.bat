@@ -6,18 +6,13 @@ echo ===================================================
 echo [info] Backend: Python Flask (backend/)
 echo [info] Frontend: Templates and static UI (frontend/)
 echo [info] Opening browser at http://localhost:5000 ...
-echo [info] Press Ctrl+C to stop the server.
-echo.
-
-:: Clean up unnecessary temporary/redundant files
-if exist ".env.example" del /f /q ".env.example" 2>nul
-if exist "cleanup.bat" del /f /q "cleanup.bat" 2>nul
-if exist "backend\.env.example" del /f /q "backend\.env.example" 2>nul
+:: Prevent Python from generating __pycache__ folders
+set PYTHONDONTWRITEBYTECODE=1
 
 :: Open browser automatically
-start http://localhost:5000
+start "" http://localhost:5000
 
-:: Run with Python
+:: Run EchoRisk AI
 python app.py
 
 pause
