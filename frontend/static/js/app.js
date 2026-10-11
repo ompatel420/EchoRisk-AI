@@ -20,6 +20,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const findingsList = $("findings-list"), exposedChips = $("exposed-chips"), aiDisclaimer = $("ai-disclaimer");
   const breachesContainer = $("breaches-container"), breachListCounter = $("breach-list-counter"), breachCardsList = $("breach-cards-list");
   const actionsChecklist = $("actions-checklist"), btnScanAnother = $("btn-scan-another"), btnPrintReport = $("btn-print-report");
+  const breachChartCanvas = $("breach-analytics-chart"), graphEmptyState = $("graph-empty-state");
+  let breachChartInstance = null, currentBreaches = [], currentSummary = {}, currentGraphView = "severity";
 
   // Modal & Password Elements
   const notifyModal = $("notify-modal"), openNotifyModalBtn = $("open-notify-modal-btn"), closeNotifyModalBtn = $("close-notify-modal-btn");
@@ -278,11 +280,412 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
+    // Render dynamic breach exposure analytics graph for all data breaches
+    currentBreaches = breaches;
+    currentSummary = summary;
+    renderBreachAnalyticsChart(currentBreaches, currentSummary, currentGraphView);
+
     if (reportSection) {
       reportSection.classList.remove("hidden");
       reportSection.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     showToast("Scan complete: Security report generated.");
+  }
+
+  // --- Breach Analytics Chart Controller ---
+  function calculateBreachThreatScore(b) {
+    const hasPwd = (b.exposed_data || []).some(d => /password|hash/i.test(d));
+    const fieldCount = (b.exposed_data || []).length;
+    const pwnCount = b.pwn_count || 0;
+    let score = 25;
+    if (hasPwd) score += 35;
+    score += Math.min(25, fieldCount * 5);
+    if (pwnCount > 100000000) score += 15;
+    else if (pwnCount > 10000000) score += 10;
+    else if (pwnCount > 1000000) score += 5;
+    return Math.min(100, Math.max(10, Math.round(score)));
+  }
+
+  function drawCanvas2DFallback(canvas, config) {
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const width = canvas.clientWidth || 360;
+    const height = canvas.clientHeight || 185;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, width, height);
+
+    const labels = config.data.labels || [];
+    const dataset = (config.data.datasets && config.data.datasets[0]) || { data: [] };
+    const data = dataset.data || [];
+    const count = labels.length;
+    if (count === 0) return;
+
+    const barHeight = Math.max(16, Math.min(26, (height - 30) / count - 8));
+    const startY = 15;
+    const maxVal = Math.max(...data, 100);
+
+    for (let i = 0; i < count; i++) {
+      const y = startY + i * (barHeight + 8);
+      const val = data[i] || 0;
+      const barW = Math.max(10, ((val / maxVal) * (width - 150)));
+
+      // Label
+      ctx.fillStyle = "#334155";
+      ctx.font = "bold 11px 'Plus Jakarta Sans', 'Inter', sans-serif";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      const lbl = labels[i].length > 15 ? labels[i].slice(0, 13) + ".." : labels[i];
+      ctx.fillText(lbl, 6, y + barHeight / 2);
+
+      // Bar
+      ctx.fillStyle = Array.isArray(dataset.backgroundColor) ? (dataset.backgroundColor[i] || "#7C3AED") : (dataset.backgroundColor || "#7C3AED");
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(110, y, barW, barHeight, [4]);
+      } else {
+        ctx.rect(110, y, barW, barHeight);
+      }
+      ctx.fill();
+
+      // Value label
+      ctx.fillStyle = "#64748B";
+      ctx.font = "600 11px 'Inter', sans-serif";
+      ctx.fillText(String(val), 116 + barW, y + barHeight / 2);
+    }
+  }
+
+  function renderBreachAnalyticsChart(breaches, summary, view = "severity") {
+    if (!breachChartCanvas) return;
+
+    if (!breaches || breaches.length === 0) {
+      if (graphEmptyState) graphEmptyState.classList.remove("hidden");
+      breachChartCanvas.style.display = "none";
+      if (breachChartInstance) {
+        breachChartInstance.destroy();
+        breachChartInstance = null;
+      }
+      return;
+    }
+
+    if (graphEmptyState) graphEmptyState.classList.add("hidden");
+    breachChartCanvas.style.display = "block";
+
+    if (breachChartInstance) {
+      breachChartInstance.destroy();
+      breachChartInstance = null;
+    }
+
+    let chartConfig = null;
+
+    if (view === "records") {
+      const labels = breaches.map(b => b.breach_title || b.breach_id || "Incident");
+      const recordsMillions = breaches.map(b => Number(((b.pwn_count || 0) / 1000000).toFixed(2)));
+      const rawRecords = breaches.map(b => b.pwn_count || 0);
+
+      chartConfig = {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [{
+            label: "Exposed Accounts (Millions)",
+            data: recordsMillions,
+            backgroundColor: "rgba(109, 40, 217, 0.78)",
+            hoverBackgroundColor: "#6D28D9",
+            borderColor: "#5B21B6",
+            borderWidth: 1.5,
+            borderRadius: 7,
+            borderSkipped: false,
+            maxBarThickness: 45
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 550, easing: "easeOutQuart" },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: "rgba(15, 23, 42, 0.92)",
+              titleFont: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", weight: 700, size: 12 },
+              bodyFont: { family: "'Inter', sans-serif", size: 11 },
+              padding: 9,
+              cornerRadius: 7,
+              callbacks: {
+                label: (ctx) => ` ${formatNumber(rawRecords[ctx.dataIndex])} exposed accounts (${ctx.raw}M)`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: {
+                font: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", weight: 600, size: 11 },
+                color: "#475569"
+              }
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: "rgba(226, 232, 240, 0.8)" },
+              ticks: {
+                font: { family: "'Inter', sans-serif", size: 10 },
+                color: "#64748B",
+                callback: (val) => `${val}M`
+              }
+            }
+          }
+        }
+      };
+
+    } else if (view === "timeline") {
+      const sortedBreaches = [...breaches].sort((a, b) => (a.breach_date || "").localeCompare(b.breach_date || ""));
+      const labels = sortedBreaches.map(b => {
+        const year = b.breach_date ? b.breach_date.slice(0, 4) : "N/A";
+        return `${b.breach_title || b.breach_id} (${year})`;
+      });
+      const scores = sortedBreaches.map(b => calculateBreachThreatScore(b));
+
+      chartConfig = {
+        type: "line",
+        data: {
+          labels: labels,
+          datasets: [{
+            label: "Incident Threat Score",
+            data: scores,
+            borderColor: "#7C3AED",
+            backgroundColor: "rgba(124, 58, 237, 0.12)",
+            fill: true,
+            tension: 0.35,
+            borderWidth: 2.5,
+            pointBackgroundColor: "#6D28D9",
+            pointBorderColor: "#FFFFFF",
+            pointBorderWidth: 2,
+            pointRadius: 6,
+            pointHoverRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 550, easing: "easeOutQuart" },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: "rgba(15, 23, 42, 0.92)",
+              titleFont: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", weight: 700, size: 12 },
+              bodyFont: { family: "'Inter', sans-serif", size: 11 },
+              padding: 9,
+              cornerRadius: 7,
+              callbacks: {
+                label: (ctx) => ` Threat Impact: ${ctx.raw}/100 | Date: ${sortedBreaches[ctx.dataIndex].breach_date || 'Unknown'}`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: {
+                font: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", weight: 600, size: 11 },
+                color: "#475569"
+              }
+            },
+            y: {
+              min: 0,
+              max: 100,
+              grid: { color: "rgba(226, 232, 240, 0.8)" },
+              ticks: {
+                stepSize: 25,
+                font: { family: "'Inter', sans-serif", size: 10 },
+                color: "#64748B",
+                callback: (val) => `${val}/100`
+              }
+            }
+          }
+        }
+      };
+
+    } else {
+      // Default: "severity" (Threat Impact)
+      const labels = breaches.map(b => b.breach_title || b.breach_id || "Incident");
+      const scores = breaches.map(b => calculateBreachThreatScore(b));
+      const bgColors = scores.map(s => s >= 80 ? "#DC2626" : (s >= 60 ? "#F59E0B" : "#7C3AED"));
+      const hoverColors = scores.map(s => s >= 80 ? "#B91C1C" : (s >= 60 ? "#D97706" : "#6D28D9"));
+
+      chartConfig = {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [{
+            label: "Threat Impact (0-100)",
+            data: scores,
+            backgroundColor: bgColors,
+            hoverBackgroundColor: hoverColors,
+            borderRadius: 7,
+            borderSkipped: false,
+            maxBarThickness: 45
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 550, easing: "easeOutQuart" },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: "rgba(15, 23, 42, 0.92)",
+              titleFont: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", weight: 700, size: 12 },
+              bodyFont: { family: "'Inter', sans-serif", size: 11 },
+              padding: 9,
+              cornerRadius: 7,
+              callbacks: {
+                label: (ctx) => {
+                  const b = breaches[ctx.dataIndex];
+                  const hasPwd = (b.exposed_data || []).some(d => /password|hash/i.test(d));
+                  return ` Threat Impact: ${ctx.raw}/100 (${hasPwd ? 'Password leaked' : 'No passwords'})`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: {
+                font: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", weight: 600, size: 11 },
+                color: "#475569"
+              }
+            },
+            y: {
+              min: 0,
+              max: 100,
+              grid: { color: "rgba(226, 232, 240, 0.8)" },
+              ticks: {
+                stepSize: 25,
+                font: { family: "'Inter', sans-serif", size: 10 },
+                color: "#64748B",
+                callback: (val) => `${val}`
+              }
+            }
+          }
+        }
+      };
+    }
+
+    if (typeof Chart !== "undefined") {
+      try {
+        breachChartInstance = new Chart(breachChartCanvas, chartConfig);
+      } catch (err) {
+        console.warn("Chart.js rendering failed, using Canvas 2D fallback:", err);
+        drawCanvas2DFallback(breachChartCanvas, chartConfig);
+      }
+    } else {
+      drawCanvas2DFallback(breachChartCanvas, chartConfig);
+    }
+  }
+
+  // --- Graph View Switcher Tabs Listener ---
+  document.querySelectorAll(".graph-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".graph-tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      currentGraphView = tab.getAttribute("data-graph-view") || "severity";
+      if (currentBreaches && currentBreaches.length) {
+        renderBreachAnalyticsChart(currentBreaches, currentSummary, currentGraphView);
+      }
+    });
+  });
+
+  // --- Dedicated Incident Dossier Chart Controller ---
+  function renderDossierBreachChart(canvas, breach) {
+    if (!canvas || !breach) return;
+    const hasPwd = breach.has_password_exposure || (breach.exposed_data || []).some(d => /password|hash/i.test(d));
+    const pwnCount = breach.pwn_count || 0;
+    const dataTypes = breach.exposed_data || [];
+
+    const labels = [
+      "Password Risk",
+      "Exposed Fields",
+      "Incident Scale",
+      "Credential Stuffing",
+      "Takeover Threat"
+    ];
+    const values = [
+      hasPwd ? 95 : 15,
+      Math.min(100, Math.max(25, dataTypes.length * 20)),
+      Math.min(100, Math.round(Math.log10(Math.max(pwnCount, 10)) * 12.5)),
+      hasPwd ? 90 : 20,
+      hasPwd ? 90 : 25
+    ];
+
+    if (typeof Chart !== "undefined") {
+      try {
+        new Chart(canvas, {
+          type: "radar",
+          data: {
+            labels: labels,
+            datasets: [{
+              label: `${breach.breach_title || 'Incident'} Threat Profile`,
+              data: values,
+              backgroundColor: "rgba(109, 40, 217, 0.22)",
+              borderColor: "#6D28D9",
+              pointBackgroundColor: "#7C3AED",
+              pointBorderColor: "#FFFFFF",
+              pointHoverBackgroundColor: "#FFFFFF",
+              pointHoverBorderColor: "#7C3AED",
+              pointRadius: 5,
+              borderWidth: 2.2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              r: {
+                min: 0,
+                max: 100,
+                ticks: { stepSize: 25, display: false },
+                pointLabels: {
+                  font: { size: 11, family: "'Plus Jakarta Sans', 'Inter', sans-serif", weight: 600 },
+                  color: "#475569"
+                },
+                grid: { color: "#E2E8F0" },
+                angleLines: { color: "#E2E8F0" }
+              }
+            },
+            plugins: {
+              legend: {
+                position: "top",
+                labels: { font: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", weight: 600 }, color: "#334155" }
+              },
+              tooltip: {
+                backgroundColor: "rgba(15, 23, 42, 0.92)",
+                padding: 9,
+                cornerRadius: 7,
+                callbacks: {
+                  label: (ctx) => ` Threat Level: ${ctx.raw}/100`
+                }
+              }
+            }
+          }
+        });
+        return;
+      } catch (err) {
+        console.warn("Dossier chart failed, using fallback:", err);
+      }
+    }
+
+    drawCanvas2DFallback(canvas, {
+      data: {
+        labels: labels,
+        datasets: [{
+          data: values,
+          backgroundColor: ["#DC2626", "#7C3AED", "#6D28D9", "#DC2626", "#DC2626"]
+        }]
+      }
+    });
   }
 
   // --- Scan Listeners ---
@@ -300,6 +703,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (btnScanAnother && emailInput && reportSection) {
     btnScanAnother.addEventListener("click", () => {
+      if (breachChartInstance) {
+        breachChartInstance.destroy();
+        breachChartInstance = null;
+      }
       reportSection.classList.add("hidden");
       emailInput.value = "";
       clearError();
@@ -609,5 +1016,18 @@ document.addEventListener("DOMContentLoaded", () => {
         if (el && el.offsetTop <= pos) { setActiveNav(navItems[i].id); break; }
       }
     }, { passive: true });
+  }
+
+  // --- Initialize Incident Dossier Page Chart if on breach_detail page ---
+  const dossierChartCanvas = $("dossier-breach-chart");
+  const dossierDataScript = $("breach-detail-data");
+  if (dossierChartCanvas && dossierDataScript) {
+    try {
+      const rawText = dossierDataScript.textContent || "{}";
+      const breachData = JSON.parse(rawText.trim());
+      renderDossierBreachChart(dossierChartCanvas, breachData);
+    } catch (e) {
+      console.warn("Could not parse dossier breach data:", e);
+    }
   }
 });

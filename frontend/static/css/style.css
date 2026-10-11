@@ -380,6 +380,7 @@ body {
   color: var(--secondary-purple);
   background: linear-gradient(135deg, #6D28D9 0%, #8B5CF6 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -2708,6 +2709,11 @@ body {
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .metrics-overview-container {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
   .footer-card-box {
     grid-template-columns: 1fr;
     gap: 1.5rem;
@@ -2754,6 +2760,16 @@ body {
 
   .metrics-grid {
     grid-template-columns: 1fr;
+  }
+
+  .metrics-cards-subgrid {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+
+  .graph-tabs {
+    width: 100%;
+    justify-content: center;
   }
 
   .report-status-header {
@@ -3140,6 +3156,29 @@ body {
   gap: 0.5rem;
 }
 
+/* Dossier Incident Threat Vector & Exposure Graph Card */
+.dossier-graph-card {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.dossier-chart-container {
+  position: relative;
+  width: 100%;
+  height: 290px;
+  max-height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.dossier-chart-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 290px;
+}
+
 .dossier-actions-list {
   list-style: none;
   display: flex;
@@ -3407,6 +3446,27 @@ body.print-active .btn {
     display: grid !important;
     grid-template-columns: repeat(4, 1fr) !important;
     gap: 0.6rem !important;
+  }
+
+  .metrics-overview-container {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.6rem !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .metrics-cards-subgrid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5rem !important;
+  }
+
+  .metrics-graph-card {
+    border: 1px solid #CBD5E1 !important;
+    background: #FFFFFF !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
   .metric-card {
