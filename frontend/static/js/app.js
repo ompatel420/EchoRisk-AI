@@ -610,9 +610,4 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }, { passive: true });
   }
-
-  if (openNotifyModalBtn) {
-    openNotifyModalBtn.addEventListener("mousedown", () => openNotifyModalBtn.classList.add("ringing"));
-    openNotifyModalBtn.addEventListener("mouseup", () => setTimeout(() => openNotifyModalBtn.classList.remove("ringing"), 600));
-  }
 });
