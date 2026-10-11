@@ -219,6 +219,25 @@
       </div>
     </section>
 
+    <!-- Incident Threat Vector & Data Exposure Analytics Graph -->
+    <section class="dossier-card dossier-graph-card">
+      <div class="dossier-card-header">
+        <div class="dossier-icon-pill">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+        </div>
+        <h2 class="dossier-section-title">Incident Threat Vector & Data Exposure Analytics</h2>
+      </div>
+      <p class="dossier-subtext">Visual distribution of compromised data sensitivity, credential leakage risk, and threat vector impact for {{ breach.breach_title }}.</p>
+      
+      <div class="dossier-chart-container">
+        <canvas id="dossier-breach-chart" aria-label="Incident Threat Vector Graph" role="img"></canvas>
+      </div>
+    </section>
+
     <!-- Technical Threat Analysis & Actionable Countermeasures -->
     <section class="dossier-card">
       <div class="dossier-card-header">
@@ -344,6 +363,10 @@
     </div>
   </footer>
 
+  <script id="breach-detail-data" type="application/json">
+    {{ breach | tojson | safe }}
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>

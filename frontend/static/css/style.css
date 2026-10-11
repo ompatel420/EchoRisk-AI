@@ -1047,6 +1047,20 @@ body {
 }
 
 /* Metrics Grid */
+/* Metrics Overview Container: 2-Column Layout with 2x2 Cards & Breach Graph */
+.metrics-overview-container {
+  display: grid;
+  grid-template-columns: minmax(310px, 1fr) 1.25fr;
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+.metrics-cards-subgrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1060,6 +1074,13 @@ body {
   padding: 1.1rem 1.2rem;
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.metric-card:hover {
+  border-color: var(--purple-border);
+  box-shadow: 0 4px 14px rgba(109, 40, 217, 0.05);
 }
 
 .metric-label {
@@ -1173,6 +1194,131 @@ body {
   background: var(--primary-purple);
   border-radius: var(--radius-pill);
   transition: width 0.4s ease;
+}
+
+/* Breach Exposure Analytics Graph Card (In that space) */
+.metrics-graph-card {
+  background: #FFFFFF;
+  border: 1.5px solid var(--purple-border);
+  border-radius: var(--radius-md);
+  padding: 1.15rem 1.35rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 4px 18px rgba(109, 40, 217, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.graph-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-bottom: 0.75rem;
+}
+
+.graph-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-heading);
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: var(--primary-purple);
+}
+
+.graph-icon {
+  color: var(--primary-purple);
+  flex-shrink: 0;
+}
+
+.graph-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: var(--purple-soft);
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--purple-border);
+}
+
+.graph-tab {
+  background: transparent;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.graph-tab:hover {
+  color: var(--primary-purple);
+}
+
+.graph-tab.active {
+  background: #FFFFFF;
+  color: var(--primary-purple);
+  box-shadow: 0 2px 6px rgba(109, 40, 217, 0.15);
+}
+
+.graph-canvas-wrapper {
+  position: relative;
+  flex: 1;
+  min-height: 185px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.graph-canvas-wrapper canvas {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 200px;
+}
+
+.graph-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.45rem;
+  padding: 1.25rem 1rem;
+}
+
+.graph-shield-circle {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #F0FDF4;
+  border: 1.5px solid #BBF7D0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.25rem;
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.12);
+}
+
+.graph-empty-title {
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #166534;
+}
+
+.graph-empty-sub {
+  font-size: 0.82rem;
+  color: #64748B;
+  max-width: 290px;
+  line-height: 1.45;
 }
 
 /* AI Report Card */
