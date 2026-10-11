@@ -226,39 +226,76 @@
             </div>
           </div>
 
-          <!-- Risk Score & Key Metrics Row -->
-          <div class="metrics-grid">
-            <div class="metric-card">
-              <span class="metric-label">Breach Incidents</span>
-              <div class="metric-value-row">
-                <span class="metric-big-number" id="metric-breach-count">0</span>
-                <span class="metric-subtext">known sources</span>
-              </div>
-            </div>
-
-            <div class="metric-card">
-              <span class="metric-label">Evaluated Risk Level</span>
-              <div class="metric-value-row">
-                <span class="risk-badge" id="metric-risk-level">Low</span>
-              </div>
-            </div>
-
-            <div class="metric-card">
-              <span class="metric-label">Password Exposure</span>
-              <div class="metric-value-row">
-                <span class="pwd-flag-badge" id="metric-pwd-flag">Clean</span>
-              </div>
-            </div>
-
-            <div class="metric-card">
-              <span class="metric-label">Threat Index</span>
-              <div class="metric-value-row">
-                <div class="score-display">
-                  <span class="score-number" id="metric-threat-score">10</span>
-                  <span class="score-max">/100</span>
+          <!-- Risk Score, Key Metrics & Breach Analytics Graph -->
+          <div class="metrics-overview-container">
+            <!-- Left Sub-Grid: 4 Metric Cards (Breach Incidents & Risk Level on top; Password Exposure & Threat Index below) -->
+            <div class="metrics-cards-subgrid">
+              <div class="metric-card">
+                <span class="metric-label">Breach Incidents</span>
+                <div class="metric-value-row">
+                  <span class="metric-big-number" id="metric-breach-count">0</span>
+                  <span class="metric-subtext">known sources</span>
                 </div>
-                <div class="score-bar-mini">
-                  <div class="score-bar-fill" id="metric-threat-fill" style="width: 10%;"></div>
+              </div>
+
+              <div class="metric-card">
+                <span class="metric-label">Evaluated Risk Level</span>
+                <div class="metric-value-row">
+                  <span class="risk-badge" id="metric-risk-level">Low</span>
+                </div>
+              </div>
+
+              <!-- Moved down below Breach Incidents & Evaluated Risk Level -->
+              <div class="metric-card">
+                <span class="metric-label">Password Exposure</span>
+                <div class="metric-value-row">
+                  <span class="pwd-flag-badge" id="metric-pwd-flag">Clean</span>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <span class="metric-label">Threat Index</span>
+                <div class="metric-value-row">
+                  <div class="score-display">
+                    <span class="score-number" id="metric-threat-score">10</span>
+                    <span class="score-max">/100</span>
+                  </div>
+                  <div class="score-bar-mini">
+                    <div class="score-bar-fill" id="metric-threat-fill" style="width: 10%;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Dynamic Breach Exposure Analytics Graph in that space -->
+            <div class="metrics-graph-card" id="metrics-graph-card">
+              <div class="graph-card-header">
+                <div class="graph-title-group">
+                  <svg class="graph-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                  </svg>
+                  <span class="graph-card-title">Breach Exposure Analytics</span>
+                </div>
+                <div class="graph-tabs" id="graph-tabs">
+                  <button type="button" class="graph-tab active" data-graph-view="severity" id="tab-graph-severity">Threat Impact</button>
+                  <button type="button" class="graph-tab" data-graph-view="records" id="tab-graph-records">Records</button>
+                  <button type="button" class="graph-tab" data-graph-view="timeline" id="tab-graph-timeline">Timeline</button>
+                </div>
+              </div>
+
+              <div class="graph-canvas-wrapper" id="graph-canvas-wrapper">
+                <canvas id="breach-analytics-chart" aria-label="Breach Analytics Graph" role="img"></canvas>
+                <div class="graph-empty-state hidden" id="graph-empty-state">
+                  <div class="graph-shield-circle">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                      <polyline points="9 11 12 14 22 4"></polyline>
+                    </svg>
+                  </div>
+                  <span class="graph-empty-title">100% Secure & Clean</span>
+                  <span class="graph-empty-sub">Zero breach exposure records detected in threat intelligence sources.</span>
                 </div>
               </div>
             </div>
