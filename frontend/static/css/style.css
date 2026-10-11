@@ -301,18 +301,6 @@ body {
   flex-shrink: 0;
 }
 
-.btn-notify.ringing {
-  animation: bellRing 0.5s ease-in-out;
-}
-
-@keyframes bellRing {
-  0%, 100% { transform: rotate(0); }
-  20% { transform: rotate(12deg); }
-  40% { transform: rotate(-12deg); }
-  60% { transform: rotate(6deg); }
-  80% { transform: rotate(-6deg); }
-}
-
 .btn-notify:focus-visible {
   outline: 2px solid var(--border-focus);
   outline-offset: 3px;
