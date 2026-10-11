@@ -369,6 +369,20 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  const btnClearSubscribers = $("btn-clear-subscribers");
+  if (btnClearSubscribers) {
+    btnClearSubscribers.addEventListener("click", () => {
+      try {
+        localStorage.removeItem("echorisk_subscribers");
+      } catch (_) { }
+      if (notifyFeedback) {
+        notifyFeedback.style.color = "var(--text-muted)";
+        notifyFeedback.textContent = "✓ Local alert subscription data cleared.";
+      }
+      showToast("Cleared local subscriber data from browser.");
+    });
+  }
+
   // --- Password Strength & Exposure Auditor ---
   function evaluatePasswordStrength(password) {
     if (!password) {

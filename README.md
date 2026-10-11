@@ -1,119 +1,150 @@
-# EchoRisk AI — Email Data Breach Tracker
+# EchoRisk AI — Email Data Breach & Cyber Risk Tracker
 
-Email Data Breach Tracker
-
-> A modern, privacy-first cybersecurity web application that checks whether an email address has been compromised in known data breaches, explains the exposure risk using Claude AI, and delivers practical defensive recommendations.
+> A modern, privacy-first cybersecurity web application that checks whether an email address or password has been compromised in known data breaches, explains exposure risks using Claude AI (with an intelligent deterministic rule-based fallback), and delivers actionable defensive countermeasures.
 
 ![EchoRisk AI Banner](frontend/static/assets/hero-illustration.svg)
 
 ---
 
 ## 1. Project Overview
-**EchoRisk AI** was built as a clean, college-level cybersecurity demonstration project. Everyday users often have their passwords, identities, and email addresses leaked in third-party database breaches without their knowledge. Attackers exploit these leaks to execute credential-stuffing and spear-phishing attacks.
 
-EchoRisk AI solves this problem by allowing users to check an email address in one click, receiving:
-- **Verified Breach Facts:** Cross-referenced in real-time from the official **XposedOrNot** threat database.
+**EchoRisk AI** is an academic cybersecurity demonstration platform designed to protect users against credential stuffing, password spraying, and spear-phishing attacks. Everyday online accounts are frequently compromised in third-party database breaches.
+
+EchoRisk AI provides an instant, transparent risk assessment:
+- **Verified Breach Intelligence:** Cross-referenced in real-time from the official **XposedOrNot** threat database.
 - **Explainable AI Risk Evaluation:** Grounded reasoning powered by **Claude AI** (Anthropic) that evaluates exposure vectors without hallucinations.
-- **Defensive Countermeasures:** Actionable, prioritized steps (MFA, password resets, session management) to safeguard compromised accounts.
-- **Zero Permanent Data Retention:** Emails are never saved to a database or written into server logs.
+- **Deterministic Cybersecurity Engine:** A zero-dependency fallback engine that guarantees 100% viva and offline reliability if an AI API key is not supplied.
+- **k-Anonymity Password Exposure Checker:** Client-side Keccak-512 hashing tests password exposures without ever transmitting plaintext credentials.
+- **Zero Permanent Data Retention:** Strict ephemeral, in-memory processing with no email database or raw credential logging.
 
 ---
 
-## 2. Key Features
+## 2. Data Collection & Privacy Audit (Does It Collect Unnecessary Data?)
 
-- **One-Click Instant Scan:** Enter an email address and scan against millions of verified breach records.
-- **Reference UI Match:** Clean white-and-purple aesthetic (`#6D28D9` / `#7C3AED`) matching modern cybersecurity industry standards.
-- **Triple Feature Cards:** 
-  1. *Breach Detection* (cross-referenced against verified databases).
-  2. *Risk Assessment* (objective threat score and metrics).
-  3. *Security Guidance* (actionable defensive countermeasures).
-- **Interactive Scan Report:**
-  - Dynamic radar animation during database search.
-  - Overall status banner and masked email display (`u***r@domain.com`).
-  - Threat index gauge (0–100) and color-coded risk badge (Low, Moderate, High, Critical).
-  - Password exposure alert indicating whether credentials or hashes were leaked.
-  - Detailed breach cards with company name, domain, breach date, records leaked, and source link.
-  - Prioritized defensive action checklist.
-- **Robust Deterministic Fallback:** If the Anthropic Claude API key is absent or unreachable, an intelligent rule-based cybersecurity engine immediately evaluates the verified breach facts, ensuring 100% viva reliability.
-- **Demo / Viva Mode:** Pre-loaded one-click test chips (`compromised@example.com` and `safe@example.com`) for seamless offline or classroom demonstrations.
-- **Notify Me Alert Subscription:** Interactive modal for users to register interest in automated breach monitoring.
-- **Accessible & Responsive:** Full keyboard navigation, semantic HTML5, aria attributes, and mobile-friendly responsive layout.
+A core tenet of EchoRisk AI is **minimal data collection and zero retention**:
+
+| Data Type | Collected? | Stored on Server? | Transmitted to 3rd Parties? | Protection Mechanism |
+|---|---|---|---|---|
+| **Scanned Email Addresses** | Yes (in memory only) | **NO** (Zero DB, zero disk files) | Yes (sent via HTTPS to XposedOrNot API for lookup) | Evaluated strictly in volatile memory during the request lifecycle. Masked in logs (`u***r@domain.com`). **Never sent to Claude AI**. |
+| **Passwords** | No (hashed locally) | **NO** (Never received by server) | Partial hash only (first 10 hex characters of Keccak-512) | Plaintext passwords **never leave your browser**. Evaluated using a k-Anonymity query against XposedOrNot. |
+| **Search / Lookup History** | No | **NO** | No | No search history or audit records are recorded on disk or in a database. |
+| **User Accounts / Profiles** | No | **NO** | No | No registration, login, or session cookies are used in Version 1 to prevent honeypot vulnerabilities. |
+| **Notification Subscriptions** | Optional (Client-side) | **NO** | No | Kept strictly inside the user's browser sandbox (`localStorage`). Can be cleared at any time with the *"Clear Local Alert Data"* button. |
+| **Telemetry / Tracking Pixels** | **NO** | **NO** | No | Zero Google Analytics, zero advertising pixels, zero device fingerprinting, and zero tracking cookies. |
 
 ---
 
-## 3. Technology Stack
+## 3. Key Features
 
-| Layer | Technology | Purpose |
+- **Instant Email Exposure Scan:** Check any email against millions of cataloged breach records.
+- **Password Exposure Auditor:** Test password strength and check if hashes have leaked online using client-side Keccak-512 k-Anonymity.
+- **Interactive Threat Report:**
+  - Visual status pill and masked target display (`u***r@domain.com`).
+  - Threat index gauge (0–100) and color-coded risk level badge (*Low*, *Moderate*, *High*, *Critical*).
+  - Password exposure indicator (identifies credential leaks vs. metadata leaks).
+  - Detailed breach cards with logo, domain, incident date, affected record count, and exposure description.
+  - Actionable defensive checklist (MFA enrollment, password rotation, session audits).
+- **Executive PDF / Print Export:** Clean, formatted print styles for generating offline cybersecurity audit reports.
+- **Dual Evaluation Engines:** Automatically selects Claude AI if an `ANTHROPIC_API_KEY` is present; seamlessly switches to the built-in deterministic heuristic engine otherwise.
+- **Offline Demo / Viva Mode:** Includes pre-configured demo chips (`compromised@example.com` and `safe@example.com`) for classroom presentation.
+- **Incident Dossiers:** Dedicated detail pages (`/breach/<id>`) detailing specific high-profile historical compromises (Adobe, LinkedIn, Canva, etc.).
+
+---
+
+## 4. Security Controls & Hardening
+
+EchoRisk AI incorporates rigorous application security standards documented in [SECURITY.md](SECURITY.md):
+
+1. **HTTP Security Response Headers:**
+   - `Content-Security-Policy`: Restricts scripts, styles, fonts, images, and API connections to verified origins.
+   - `X-Content-Type-Options: nosniff`: Prevents MIME-type confusion attacks.
+   - `X-Frame-Options: DENY` & CSP `frame-ancestors 'none'`: Comprehensive clickjacking defense.
+   - `Referrer-Policy: strict-origin-when-cross-origin`: Shields request metadata.
+   - `Permissions-Policy`: Disables camera, microphone, and geolocation.
+2. **In-Memory Rate Limiting:**
+   - Thread-safe sliding window rate limiter throttles requests on `/api/scan` to **30 requests per minute per IP**, returning HTTP 429 with a `Retry-After` header.
+3. **Request Body Size Guard:**
+   - Enforces a 1 MB limit via Flask `MAX_CONTENT_LENGTH`, mitigating denial-of-service memory exhaustion attacks with a clean HTTP 413 error.
+4. **Input Sanitization & Normalization:**
+   - Server-side RFC validation, length checks (254 chars max), domain typo auto-correction (Levenshtein distance), and fail-open DNS checks.
+5. **Output Escaping:**
+   - All dynamic content is escaped using `escapeHtml()` in JavaScript and auto-escaping in Jinja2 templates, mitigating Cross-Site Scripting (XSS).
+
+---
+
+## 5. Technology Stack
+
+| Component | Technology | Purpose |
 |---|---|---|
-| **Backend** | Python 3.9+ / Flask | Lightweight, clean web server & API orchestration |
-| **Frontend** | HTML5, Vanilla CSS3, Modern JS | Clean client with zero heavy framework bloat |
-| **Breach Intelligence** | XposedOrNot REST API | Real-time verified breach lookups |
-| **AI Reasoning** | Anthropic Claude API (`claude-3-5-sonnet-20241022`) | Defensive risk analysis on verified breach facts |
-| **Security & Config** | `python-dotenv` | Encapsulation of credentials in `.env` |
-| **Styling & Assets** | Pure CSS & Custom SVGs | Custom-tailored purple & white design system |
+| **Backend** | Python 3.9+ / Flask | Lightweight API orchestration, rate limiting, and routing |
+| **Frontend** | Vanilla HTML5, CSS3, Modern ES6+ | Clean, fast client with zero heavy framework overhead |
+| **Breach Intelligence** | XposedOrNot REST API | Real-time verified breach verification |
+| **AI Risk Reasoning** | Anthropic Claude API (`claude-3-5-sonnet-20241022`) | Objective exposure interpretation over verified facts |
+| **Local Cryptography** | Keccak-512 (SHA-3) via `js-sha3` | Client-side password hashing for k-Anonymity queries |
+| **Configuration** | `python-dotenv` | Environment separation (`.env` / `.env.example`) |
+| **Styling & Assets** | Custom CSS & Scalable SVGs | Purple & white cybersecurity design system |
 
 ---
 
-## 4. Folder Structure
+## 6. Project Structure
 
 ```
 Echorisk-AI/
-├── 01_PROJECT_PLAN.md
-├── 02_UI_DESIGN.md
-├── 03_FRONTEND.md
-├── 04_FLASK_BACKEND.md
-├── 05_BREACH_API.md
-├── 06_CLAUDE_AI_AND_REPORT.md
-├── 07_TESTING_AND_FINAL_POLISH.md
-├── PROJECT_IMPLEMENTATION_NOTES.md
-├── README.md
-├── VIVA_NOTES.md
-├── requirements.txt
-├── .gitignore
-├── .env
-├── app.py
-├── run.bat
+├── .env.example                     # Sanitized environment template for configuration
+├── .gitignore                       # Prevents secret leakage (.env, __pycache__, logs)
+├── 01_PROJECT_PLAN.md               # Architecture planning document
+├── 02_UI_DESIGN.md                  # Design specifications
+├── 03_FRONTEND.md                   # Frontend specifications
+├── 04_FLASK_BACKEND.md              # Backend specifications
+├── 05_BREACH_API.md                 # Threat API integration notes
+├── 06_CLAUDE_AI_AND_REPORT.md       # AI risk prompt & schema guidelines
+├── 07_TESTING_AND_FINAL_POLISH.md   # Final testing and viva requirements
+├── PROJECT_IMPLEMENTATION_NOTES.md  # Detailed implementation notes
+├── README.md                        # Project documentation (this file)
+├── SECURITY.md                      # Security policy, checklist & threat model
+├── VIVA_NOTES.md                    # Academic viva & technical Q&A defense guide
+├── requirements.txt                 # Pinned Python package dependencies
+├── app.py                           # Root application entrypoint
+├── run.bat                          # One-click Windows launch script
 ├── backend/
 │   ├── __init__.py
-│   ├── app.py
-│   ├── requirements.txt
+│   ├── app.py                       # Flask server, rate limiter, security headers
 │   ├── services/
 │   │   ├── __init__.py
-│   │   ├── breach_service.py
-│   │   ├── ai_service.py
-│   │   └── report_service.py
+│   │   ├── breach_service.py        # XposedOrNot API client & catalog cache
+│   │   ├── ai_service.py            # Claude AI client & deterministic fallback engine
+│   │   └── report_service.py        # Report normalization and aggregation
 │   └── utils/
 │       ├── __init__.py
-│       └── validators.py
+│       └── validators.py            # RFC validation, Levenshtein typo detection, masking
 └── frontend/
     ├── templates/
-    │   ├── index.html
-    │   └── breach_detail.html
+    │   ├── index.html               # Main scanner landing page & interactive report
+    │   └── breach_detail.html       # Individual incident dossier template
     └── static/
         ├── css/
-        │   └── style.css
+        │   └── style.css            # Complete design system
         ├── js/
-        │   └── app.js
+        │   └── app.js               # Client controller, k-Anonymity hasher, UI logic
         └── assets/
-            ├── logo.png
-            ├── logo.svg
-            └── hero-illustration.svg
+            ├── logo.png             # Application logo (PNG)
+            ├── logo.svg             # Application logo (SVG)
+            └── hero-illustration.svg# Shield & radar cybersecurity graphic
 ```
 
 ---
 
-## 5. Setup & Installation Guide
+## 7. Setup & Installation Guide
 
 ### Prerequisites
-- Python 3.9 or higher installed on your computer.
-- Git (optional).
+- **Python 3.9+** installed on your system.
 
-### Step 1: Clone or Navigate to Project Directory
+### Step 1: Clone or Open Repository
 ```bash
-cd d:\Users\Om Patel\Projects\Antigravity\Echorisk-AI
+cd "d:\Users\Om Patel\Projects\Antigravity\Echorisk-AI"
 ```
 
-### Step 2: Create and Activate Virtual Environment (Recommended)
+### Step 2: Virtual Environment Setup
 ```bash
 # On Windows:
 python -m venv venv
@@ -124,79 +155,78 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-### Step 3: Install Required Dependencies
+### Step 3: Install Python Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
 ### Step 4: Configure Environment Variables
-Open `.env` in any text editor and adjust variables if desired:
-- `ANTHROPIC_API_KEY`: *(Optional)* Insert your Anthropic API key to enable Claude 3 reasoning. If left empty, EchoRisk AI automatically uses its built-in rule-based deterministic security engine!
-- `MOCK_MODE`: Set to `false` for live XposedOrNot queries, or `true` for simulated offline presentation mode.
-- `FLASK_PORT`: Default is `5000`.
-
-### Step 5: Run the Flask Web Application
+Create your local `.env` from the provided example template:
 ```bash
-python app.py
+# Windows:
+copy .env.example .env
+
+# macOS/Linux:
+cp .env.example .env
 ```
-Open your web browser and visit:
+Open `.env` to configure your settings:
+```ini
+FLASK_APP=app.py
+FLASK_ENV=development
+FLASK_PORT=5000
+SECRET_KEY=change-this-in-production
+
+# Optional: Add your Anthropic key or leave blank for the built-in deterministic engine
+ANTHROPIC_API_KEY=
+ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
+
+# Threat intelligence settings
+XPOSEDORNOT_API_URL=https://api.xposedornot.com/v1
+MOCK_MODE=false
+```
+
+### Step 5: Start the Web Application
+```bash
+# Direct Python execution:
+python app.py
+
+# Or on Windows using the batch script:
+.\run.bat
+```
+Visit the local server in your browser:
 ```
 http://localhost:5000
 ```
 
 ---
 
-## 6. How the Data Flow Works
+## 8. Verification & Security Testing
 
-```
-[ User enters email ]
-         │
-         ▼
-[ Client-side Validation ] (RFC format check, whitespace normalization)
-         │
-         ▼
-[ POST /api/scan ] ──────> [ backend/utils/validators.py ] (Server-side validation & masking)
-                                  │
-                                  ▼
-                     [ backend/services/breach_service.py ]
-                                  │
-                     (Query XposedOrNot REST API)
-                                  │
-                                  ▼
-                     [ Normalize Breach Facts ]
-                     (Counts, breach titles, exposed types, password flag)
-                                  │
-                                  ▼
-                      [ backend/services/ai_service.py ]
-                     (Send strictly verified facts to Claude AI / Fallback)
-                                  │
-                                  ▼
-                    [ backend/services/report_service.py ]
-                     (Combine facts, risk score & defensive actions)
-                                  │
-                                  ▼
-[ Return 200 OK JSON ] ──> [ Browser Dynamic Report UI ]
+You can verify the backend endpoints and security defenses using Python:
+
+```bash
+# 1. Verify health status and HTTP security headers
+python -c "from backend.app import app; c = app.test_client(); r = c.get('/health'); print('Health:', r.status_code, r.json); print('CSP:', r.headers.get('Content-Security-Policy'))"
+
+# 2. Test input validation (empty and invalid emails)
+python -c "from backend.app import app; c = app.test_client(); print('Empty:', c.post('/api/scan', json={'email': ''}).status_code); print('Invalid:', c.post('/api/scan', json={'email': 'bad'}).status_code)"
+
+# 3. Test rate limiting (30 requests threshold)
+python -c "from backend.app import app; c = app.test_client(); [c.post('/api/scan', json={'email': 'safe@example.com'}) for _ in range(30)]; print('Rate limited:', c.post('/api/scan', json={'email': 'safe@example.com'}).status_code)"
+
+# 4. Test request payload size guard (1 MB limit)
+python -c "from backend.app import app; c = app.test_client(); print('Payload guard:', c.post('/api/scan', json={'email': 'a' * 1050000}).status_code)"
 ```
 
 ---
 
-## 7. Privacy & Security Principles
+## 9. Academic Defense & Viva Notes
 
-1. **Zero Permanent Data Retention:** The application does not store scanned email addresses in any database, cache, or disk storage.
-2. **Zero Sensitive Logging:** Server console logs print only masked email identifiers (`u***r@example.com`) to prevent accidental credential leakage in operational logs.
-3. **No Direct Frontend API Exposure:** API keys and external third-party requests are handled solely by the Python backend. The client browser communicates only with `/api/scan`.
-4. **Non-Hallucinatory AI Prompting:** Claude AI is supplied solely with confirmed breach facts. It is explicitly instructed never to invent breaches, guess passwords, or generate offensive attack tactics.
+Comprehensive questions and answers addressing architecture, why Flask was chosen, threat modeling, AI prompting safety, and edge-case handling are available in [VIVA_NOTES.md](VIVA_NOTES.md).
 
 ---
 
-## 8. Known Limitations & Future Roadmap
+## 10. License & Attributions
 
-- **Phone Number Checking:** The initial version is dedicated strictly to email breach checking. Future iterations can add phone number checking once standardized lookup APIs are integrated.
-- **Dark Web Monitoring Daemon:** Currently, scans are on-demand. Automated recurring alert notifications are captured via the "Notify Me" interface for future cron/worker queue integration.
-- **Provider Coverage:** Results reflect incidents cataloged by XposedOrNot; unpublicized or private corporate breaches may not appear.
-
----
-
-## 9. License & Attribution
-- Educational college project developed for cyber awareness and academic viva presentation.
-- Breach threat intelligence powered by [XposedOrNot](https://xposedornot.com).
+- Developed as an educational cybersecurity demonstration and college viva project.
+- Breach threat intelligence powered by the public threat database at [XposedOrNot](https://xposedornot.com).

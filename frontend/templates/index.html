@@ -553,7 +553,10 @@
         <button type="submit" class="btn btn-primary btn-block" id="notify-submit-btn">
           <span>Subscribe for Alerts</span>
         </button>
-        <p class="modal-privacy-note">We never spam. You can unsubscribe at any time.</p>
+        <div class="modal-privacy-box" style="margin-top: 0.5rem; text-align: center;">
+          <p class="modal-privacy-note">Zero-server storage: alert preferences stay strictly in your local browser sandbox.</p>
+          <button type="button" class="btn-clear-subscribers" id="btn-clear-subscribers" style="background: none; border: none; color: var(--primary-purple); font-size: 0.75rem; text-decoration: underline; cursor: pointer; padding: 2px 6px;">Clear Local Alert Data</button>
+        </div>
       </form>
     </div>
   </div>
