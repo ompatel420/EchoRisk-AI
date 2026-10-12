@@ -140,13 +140,9 @@ def _normalize_breach_detail(breach_id: str, catalog: Dict[str, Dict[str, Any]])
     industry = meta.get("industry") or meta.get("category") or fb.get("industry") or _detect_industry(key)
     logo_url = meta.get("logo") or fb.get("logo") or f"https://xposedornot.com/static/logos/{clean_id}.png"
 
-    raw_exposed = meta.get("exposedData") or meta.get("exposed_data") or fb.get("exposed_data") or ["Email Addresses"]
-    if isinstance(raw_exposed, str):
-        exposed = [x.strip() for x in raw_exposed.split(";") if x.strip()]
-    elif isinstance(raw_exposed, list):
-        exposed = [str(x).strip() for x in raw_exposed if str(x).strip()]
-    else:
-        exposed = ["Email Addresses"]
+    raw_exp = meta.get("exposedData") or meta.get("exposed_data") or fb.get("exposed_data") or ["Email Addresses"]
+    items = raw_exp.split(";") if isinstance(raw_exp, str) else (raw_exp if isinstance(raw_exp, list) else ["Email Addresses"])
+    exposed = [str(x).strip() for x in items if str(x).strip()] or ["Email Addresses"]
 
     return {
         "breach_id": clean_id,
@@ -286,19 +282,9 @@ def check_email_breaches(normalized_email: str) -> Dict[str, Any]:
         if not isinstance(data, dict) or data.get("Error") == "Not found":
             return _empty_breach_response("success", "No matching breaches found in checked source.")
 
-        raw_breaches = data.get("breaches") or data.get("exposedBreaches") or []
-        breach_names: List[str] = []
-        if raw_breaches and isinstance(raw_breaches, list):
-            for item in raw_breaches:
-                if isinstance(item, list):
-                    for sub in item:
-                        s = str(sub).strip()
-                        if s and s not in breach_names:
-                            breach_names.append(s)
-                elif item:
-                    s = str(item).strip()
-                    if s and s not in breach_names:
-                        breach_names.append(s)
+        raw = data.get("breaches") or data.get("exposedBreaches") or []
+        items = [x for sub in raw for x in (sub if isinstance(sub, list) else [sub])] if isinstance(raw, list) else []
+        breach_names = list(dict.fromkeys(str(x).strip() for x in items if str(x).strip()))
 
         if not breach_names:
             return _empty_breach_response("success", "No matching breaches found in checked source.")

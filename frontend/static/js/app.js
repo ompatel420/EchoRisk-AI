@@ -382,6 +382,40 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let chartConfig = null;
 
+    const createOptions = (tooltipCb, yCallback = (v) => `${v}`, yMax = 100) => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 550, easing: "easeOutQuart" },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: "rgba(15, 23, 42, 0.92)",
+          titleFont: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", weight: 700, size: 12 },
+          bodyFont: { family: "'Inter', sans-serif", size: 11 },
+          padding: 9,
+          cornerRadius: 7,
+          callbacks: { label: tooltipCb }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", weight: 600, size: 11 }, color: "#475569" }
+        },
+        y: {
+          min: 0,
+          max: yMax,
+          grid: { color: "rgba(226, 232, 240, 0.8)" },
+          ticks: {
+            stepSize: yMax === 100 ? 25 : undefined,
+            font: { family: "'Inter', sans-serif", size: 10 },
+            color: "#64748B",
+            callback: yCallback
+          }
+        }
+      }
+    });
+
     if (view === "records") {
       const labels = breaches.map(b => b.breach_title || b.breach_id || "Incident");
       const recordsMillions = breaches.map(b => Number(((b.pwn_count || 0) / 1000000).toFixed(2)));
@@ -390,7 +424,7 @@ document.addEventListener("DOMContentLoaded", () => {
       chartConfig = {
         type: "bar",
         data: {
-          labels: labels,
+          labels,
           datasets: [{
             label: "Exposed Accounts (Millions)",
             data: recordsMillions,
@@ -403,56 +437,22 @@ document.addEventListener("DOMContentLoaded", () => {
             maxBarThickness: 45
           }]
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          animation: { duration: 550, easing: "easeOutQuart" },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: "rgba(15, 23, 42, 0.92)",
-              titleFont: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", weight: 700, size: 12 },
-              bodyFont: { family: "'Inter', sans-serif", size: 11 },
-              padding: 9,
-              cornerRadius: 7,
-              callbacks: {
-                label: (ctx) => ` ${formatNumber(rawRecords[ctx.dataIndex])} exposed accounts (${ctx.raw}M)`
-              }
-            }
-          },
-          scales: {
-            x: {
-              grid: { display: false },
-              ticks: {
-                font: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", weight: 600, size: 11 },
-                color: "#475569"
-              }
-            },
-            y: {
-              beginAtZero: true,
-              grid: { color: "rgba(226, 232, 240, 0.8)" },
-              ticks: {
-                font: { family: "'Inter', sans-serif", size: 10 },
-                color: "#64748B",
-                callback: (val) => `${val}M`
-              }
-            }
-          }
-        }
+        options: createOptions(
+          (ctx) => ` ${formatNumber(rawRecords[ctx.dataIndex])} exposed accounts (${ctx.raw}M)`,
+          (val) => `${val}M`,
+          undefined
+        )
       };
 
     } else if (view === "timeline") {
       const sortedBreaches = [...breaches].sort((a, b) => (a.breach_date || "").localeCompare(b.breach_date || ""));
-      const labels = sortedBreaches.map(b => {
-        const year = b.breach_date ? b.breach_date.slice(0, 4) : "N/A";
-        return `${b.breach_title || b.breach_id} (${year})`;
-      });
+      const labels = sortedBreaches.map(b => `${b.breach_title || b.breach_id} (${b.breach_date ? b.breach_date.slice(0, 4) : "N/A"})`);
       const scores = sortedBreaches.map(b => calculateBreachThreatScore(b));
 
       chartConfig = {
         type: "line",
         data: {
-          labels: labels,
+          labels,
           datasets: [{
             label: "Incident Threat Score",
             data: scores,
@@ -468,109 +468,40 @@ document.addEventListener("DOMContentLoaded", () => {
             pointHoverRadius: 8
           }]
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          animation: { duration: 550, easing: "easeOutQuart" },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: "rgba(15, 23, 42, 0.92)",
-              titleFont: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", weight: 700, size: 12 },
-              bodyFont: { family: "'Inter', sans-serif", size: 11 },
-              padding: 9,
-              cornerRadius: 7,
-              callbacks: {
-                label: (ctx) => ` Threat Impact: ${ctx.raw}/100 | Date: ${sortedBreaches[ctx.dataIndex].breach_date || 'Unknown'}`
-              }
-            }
-          },
-          scales: {
-            x: {
-              grid: { display: false },
-              ticks: {
-                font: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", weight: 600, size: 11 },
-                color: "#475569"
-              }
-            },
-            y: {
-              min: 0,
-              max: 100,
-              grid: { color: "rgba(226, 232, 240, 0.8)" },
-              ticks: {
-                stepSize: 25,
-                font: { family: "'Inter', sans-serif", size: 10 },
-                color: "#64748B",
-                callback: (val) => `${val}/100`
-              }
-            }
-          }
-        }
+        options: createOptions(
+          (ctx) => ` Threat Impact: ${ctx.raw}/100 | Date: ${sortedBreaches[ctx.dataIndex].breach_date || 'Unknown'}`,
+          (val) => `${val}/100`,
+          100
+        )
       };
 
     } else {
       // Default: "severity" (Threat Impact)
       const labels = breaches.map(b => b.breach_title || b.breach_id || "Incident");
       const scores = breaches.map(b => calculateBreachThreatScore(b));
-      const bgColors = scores.map(s => s >= 80 ? "#DC2626" : (s >= 60 ? "#F59E0B" : "#7C3AED"));
-      const hoverColors = scores.map(s => s >= 80 ? "#B91C1C" : (s >= 60 ? "#D97706" : "#6D28D9"));
 
       chartConfig = {
         type: "bar",
         data: {
-          labels: labels,
+          labels,
           datasets: [{
             label: "Threat Impact (0-100)",
             data: scores,
-            backgroundColor: bgColors,
-            hoverBackgroundColor: hoverColors,
+            backgroundColor: scores.map(s => s >= 80 ? "#DC2626" : (s >= 60 ? "#F59E0B" : "#7C3AED")),
+            hoverBackgroundColor: scores.map(s => s >= 80 ? "#B91C1C" : (s >= 60 ? "#D97706" : "#6D28D9")),
             borderRadius: 7,
             borderSkipped: false,
             maxBarThickness: 45
           }]
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          animation: { duration: 550, easing: "easeOutQuart" },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: "rgba(15, 23, 42, 0.92)",
-              titleFont: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", weight: 700, size: 12 },
-              bodyFont: { family: "'Inter', sans-serif", size: 11 },
-              padding: 9,
-              cornerRadius: 7,
-              callbacks: {
-                label: (ctx) => {
-                  const b = breaches[ctx.dataIndex];
-                  const hasPwd = (b.exposed_data || []).some(d => /password|hash/i.test(d));
-                  return ` Threat Impact: ${ctx.raw}/100 (${hasPwd ? 'Password leaked' : 'No passwords'})`;
-                }
-              }
-            }
+        options: createOptions(
+          (ctx) => {
+            const hasPwd = (breaches[ctx.dataIndex].exposed_data || []).some(d => /password|hash/i.test(d));
+            return ` Threat Impact: ${ctx.raw}/100 (${hasPwd ? 'Password leaked' : 'No passwords'})`;
           },
-          scales: {
-            x: {
-              grid: { display: false },
-              ticks: {
-                font: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", weight: 600, size: 11 },
-                color: "#475569"
-              }
-            },
-            y: {
-              min: 0,
-              max: 100,
-              grid: { color: "rgba(226, 232, 240, 0.8)" },
-              ticks: {
-                stepSize: 25,
-                font: { family: "'Inter', sans-serif", size: 10 },
-                color: "#64748B",
-                callback: (val) => `${val}`
-              }
-            }
-          }
-        }
+          (val) => `${val}`,
+          100
+        )
       };
     }
 

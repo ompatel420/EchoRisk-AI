@@ -1062,12 +1062,6 @@ body {
   gap: 1rem;
 }
 
-.metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1.25rem;
-}
-
 .metric-card {
   background: var(--bg-surface);
   border: 1px solid var(--border-light);
@@ -2705,10 +2699,6 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .metrics-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
   .metrics-overview-container {
     grid-template-columns: 1fr;
     gap: 1.25rem;
@@ -2756,10 +2746,6 @@ body {
 
   .nav-links {
     display: none;
-  }
-
-  .metrics-grid {
-    grid-template-columns: 1fr;
   }
 
   .metrics-cards-subgrid {
@@ -2906,17 +2892,6 @@ body {
   border-radius: 20px;
   padding: 2.2rem 2.5rem;
   margin-bottom: 1.5rem;
-}
-
-.dossier-header-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid var(--border-light);
-  margin-bottom: 1.75rem;
 }
 
 .dossier-identity-block {
@@ -3440,12 +3415,6 @@ body.print-active .btn {
     margin-bottom: 0.85rem !important;
     page-break-inside: avoid;
     break-inside: avoid;
-  }
-
-  .metrics-grid {
-    display: grid !important;
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 0.6rem !important;
   }
 
   .metrics-overview-container {
