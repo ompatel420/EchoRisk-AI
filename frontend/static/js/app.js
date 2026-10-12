@@ -847,8 +847,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function computeKeccak512Hex(str) {
-    if (typeof window.keccak512 === "function") {
-      return window.keccak512(str).slice(0, 10);
+    const fn = (typeof window !== "undefined" && (window.keccak512 || window.keccak_512)) || (typeof keccak512 === "function" ? keccak512 : null);
+    if (fn) {
+      return fn(str).slice(0, 10);
     }
     const utf8 = new TextEncoder().encode(str), rate = 72;
     const padLen = rate - (utf8.length % rate), padded = new Uint8Array(utf8.length + padLen);

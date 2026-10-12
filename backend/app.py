@@ -62,15 +62,17 @@ def get_client_ip() -> str:
 
 
 def is_rate_limited(ip: str) -> bool:
-    """Thread-safe sliding window rate check."""
+    """Thread-safe sliding window rate check with memory-leak cleanup."""
     now = time.time()
     with _rate_limit_lock:
-        timestamps = _ip_request_timestamps[ip]
-        # Prune expired timestamps
-        _ip_request_timestamps[ip] = [ts for ts in timestamps if now - ts < RATE_LIMIT_WINDOW]
-        if len(_ip_request_timestamps[ip]) >= RATE_LIMIT_MAX_REQUESTS:
+        timestamps = [ts for ts in _ip_request_timestamps.get(ip, []) if now - ts < RATE_LIMIT_WINDOW]
+        if not timestamps:
+            _ip_request_timestamps.pop(ip, None)
+        else:
+            _ip_request_timestamps[ip] = timestamps
+        if len(timestamps) >= RATE_LIMIT_MAX_REQUESTS:
             return True
-        _ip_request_timestamps[ip].append(now)
+        _ip_request_timestamps.setdefault(ip, []).append(now)
         return False
 
 
@@ -84,10 +86,10 @@ def set_security_headers(response):
 
     csp_directives = [
         "default-src 'self'",
-        "script-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'",
+        "script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net 'unsafe-inline'",
         "style-src 'self' https://fonts.googleapis.com 'unsafe-inline'",
         "font-src 'self' https://fonts.gstatic.com data:",
-        "img-src 'self' data: https://xposedornot.com",
+        "img-src 'self' data: https://xposedornot.com https:",
         "connect-src 'self' https://passwords.xposedornot.com https://api.xposedornot.com",
         "frame-ancestors 'none'",
         "base-uri 'self'",

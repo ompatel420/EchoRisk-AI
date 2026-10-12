@@ -211,10 +211,14 @@ def get_breach_detail(breach_identifier: str) -> Dict[str, Any]:
     raw_ind = (detail.get("industry") or "Entertainment").lower()
     ind_map = {
         "entertainment": ("Entertainment", "entertainment"),
-        "tech": ("Technology", "technology"),
+        "creative": ("Creative Software", "creative"),
         "social": ("Social Network", "social"),
         "health": ("Health & Fitness", "health"),
-        "creative": ("Creative Software", "creative")
+        "tech": ("Technology", "technology"),
+        "professional": ("Professional Network", "technology"),
+        "network": ("Professional Network", "technology"),
+        "cloud": ("Web & Cloud Platform", "technology"),
+        "software": ("Technology", "technology")
     }
     industry_name, industry_type = detail.get("industry", "General"), "general"
     for k, (name, itype) in ind_map.items():
@@ -282,7 +286,7 @@ def check_email_breaches(normalized_email: str) -> Dict[str, Any]:
         if not isinstance(data, dict) or data.get("Error") == "Not found":
             return _empty_breach_response("success", "No matching breaches found in checked source.")
 
-        raw_breaches = data.get("breaches", [])
+        raw_breaches = data.get("breaches") or data.get("exposedBreaches") or []
         breach_names: List[str] = []
         if raw_breaches and isinstance(raw_breaches, list):
             for item in raw_breaches:
