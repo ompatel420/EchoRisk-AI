@@ -29,7 +29,7 @@ A core tenet of EchoRisk AI is **minimal data collection and zero retention**:
 | **Passwords** | No (hashed locally) | **NO** (Never received by server) | Partial hash only (first 10 hex characters of Keccak-512) | Plaintext passwords **never leave your browser**. Evaluated using a k-Anonymity query against XposedOrNot. |
 | **Search / Lookup History** | No | **NO** | No | No search history or audit records are recorded on disk or in a database. |
 | **User Accounts / Profiles** | No | **NO** | No | No registration, login, or session cookies are used in Version 1 to prevent honeypot vulnerabilities. |
-| **Notification Subscriptions** | Optional (Client-side) | **NO** | No | Kept strictly inside the user's browser sandbox (`localStorage`). Can be cleared at any time with the *"Clear Local Alert Data"* button. |
+| **Notification Subscriptions** | Optional (Simulation) | **NO** | No | Strict Zero-Storage: No notification emails are stored in browser localStorage or cached on server. |
 | **Telemetry / Tracking Pixels** | **NO** | **NO** | No | Zero Google Analytics, zero advertising pixels, zero device fingerprinting, and zero tracking cookies. |
 
 ---

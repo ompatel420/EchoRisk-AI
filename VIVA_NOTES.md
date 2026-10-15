@@ -38,7 +38,7 @@ This guide is designed for classroom defense, academic vivas, project presentati
 - **Console / Server Logs:** Application logs only record masked email addresses (`u***r@domain.com`), preventing accidental exposure in server stdout or log aggregators.
 - **AI Processing Privacy:** The raw email address is **never transmitted to Anthropic / Claude AI**. Claude receives only anonymized breach metadata (breach count, names, dates, leaked data categories).
 - **Password Exposure Checker:** The user's plaintext password never leaves the browser. The frontend hashes the password using Keccak-512 and transmits only the first 10 hex characters (k-Anonymity model) to XposedOrNot.
-- **Notify Me Feature:** Kept entirely in client-side browser `localStorage` as an offline demo simulation; zero server-side subscription databases are maintained, and users can clear the data with one click.
+- **Notify Me Feature:** Kept strictly zero-storage. No emails or alert subscriptions are stored or cached on the server or in the browser.
 - **No Trackers:** Zero Google Analytics, zero advertising pixels, zero third-party telemetry scripts.
 
 ### Q: Why is there no user registration / login system in Version 1?
@@ -55,7 +55,7 @@ This guide is designed for classroom defense, academic vivas, project presentati
 **A:**
 - The backend communicates directly with the official XposedOrNot REST API (`https://api.xposedornot.com/v1/check-email/<email>`).
 - If an email has records in known breaches, XposedOrNot returns verified incident names.
-- EchoRisk AI cross-references this against its cached breach catalog to extract incident details (breach date, records leaked, exposed data types, company domain).
+- EchoRisk AI cross-references this in real-time against verified breach incident details (breach date, records leaked, exposed data types, company domain) with zero persistent caching.
 
 ### Q: Why is the breach lookup performed before AI reasoning?
 **A:** To eliminate **AI hallucination**. Large Language Models should never guess whether an email was breached or invent imaginary security breaches. By performing a deterministic database lookup first, EchoRisk AI grounds the AI strictly on confirmed, real-world facts.
