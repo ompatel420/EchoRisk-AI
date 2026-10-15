@@ -29,29 +29,20 @@ Echorisk-AI/
 ├── run.bat
 ├── backend/
 │   ├── __init__.py
-│   ├── app.py
-│   ├── requirements.txt
-│   ├── ackend/services/
-│   │   ├── __init__.py
-│   │   ├── breach_service.py
-│   │   ├── ai_service.py
-│   │   └── report_service.py
-│   └── ackend/utils/
-│       ├── __init__.py
-│       └── validators.py
+│   ├── app.py                 # Flask server & REST API endpoints
+│   ├── breach_intel.py        # Breach intelligence (XposedOrNot live queries, zero cache)
+│   ├── ai_risk_engine.py      # Claude AI reasoning & deterministic risk fallback
+│   ├── report_builder.py      # Structured threat report assembler
+│   └── input_validator.py     # Email validation, typo detection, & privacy masking
 └── frontend/
-    ├── templates/
-    │   ├── index.html
-    │   └── breach_detail.html
-    └── static/
+    ├── templates/             # UI Templates
+    │   ├── index.html         # Homepage & Interactive Scan Dashboard
+    │   └── breach_detail.html # Dedicated Incident Dossier View
+    └── static/                # Design & Client Logic
         ├── css/
-        │   └── style.css
-        ├── js/
-        │   └── app.js
-        └── assets/
-            ├── logo.png
-            ├── logo.svg
-            └── hero-illustration.svg
+        │   └── style.css      # Design System, Theme Tokens, Glassmorphism & Animations
+        └── js/
+            └── app.js         # UI Controller & Client-Side Scan Pipeline
 ```
 
 ---
@@ -73,33 +64,33 @@ Echorisk-AI/
 ```mermaid
 sequenceDiagram
     autonumber
-    actor User as User Browser
-    participant Flask as Flask Backend (/api/scan)
-    participant Validator as utils.validators
-    participant BreachSvc as services.breach_service
+    actor User as User Browser (UI)
+    participant Flask as backend/app.py
+    participant Validator as backend/input_validator
+    participant BreachIntel as backend/breach_intel
     participant XON as XposedOrNot API
-    participant AISvc as services.ai_service
+    participant RiskEngine as backend/ai_risk_engine
     participant Claude as Claude API
-    participant ReportSvc as services.report_service
+    participant ReportBuilder as backend/report_builder
 
     User->>Flask: POST /api/scan {"email": "..."}
-    Flask->>Validator: validate_email_address(email)
+    Flask->>Validator: validate_and_normalize_email(email)
     Validator-->>Flask: normalized_email (lowercase & trimmed)
-    Flask->>BreachSvc: check_email_breaches(email)
-    BreachSvc->>XON: GET /v1/check-email/{email}
-    XON-->>BreachSvc: Raw API Response
-    BreachSvc-->>Flask: Normalized Breach Facts Object
-    Flask->>AISvc: analyze_risk(breach_facts)
-    AISvc->>Claude: Structured Prompt (Verified Facts Only)
+    Flask->>BreachIntel: check_email_breaches(email)
+    BreachIntel->>XON: GET /v1/check-email/{email}
+    XON-->>BreachIntel: Raw API Response
+    BreachIntel-->>Flask: Normalized Breach Facts Object
+    Flask->>RiskEngine: analyze_risk_with_claude(breach_facts)
+    RiskEngine->>Claude: Structured Prompt (Verified Facts Only)
     alt Claude API Success
-        Claude-->>AISvc: JSON Risk Summary & Actions
+        Claude-->>RiskEngine: JSON Risk Summary & Actions
     else Claude API Offline / No Key
-        AISvc-->>Flask: Deterministic Rule-Based Fallback Analysis
+        RiskEngine-->>Flask: Deterministic Rule-Based Fallback Analysis
     end
-    AISvc-->>Flask: AI / Fallback Risk Assessment
-    Flask->>ReportSvc: assemble_final_report(facts, assessment)
-    ReportSvc-->>Flask: Final Unified Report JSON
-    Flask-->>User: 200 OK Normalized Response
+    RiskEngine-->>Flask: AI / Fallback Risk Assessment
+    Flask->>ReportBuilder: assemble_final_report(facts, assessment)
+    ReportBuilder-->>Flask: Final Unified Report JSON
+    Flask-->>User: 200 OK Normalized Response (Cache-Control: no-store)
     User->>User: Render Interactive Report UI (No page reload)
 ```
 

@@ -5,6 +5,9 @@ Delegates execution to the backend server in `backend/app.py`.
 import os
 import sys
 
+# Prevent Python from creating __pycache__ folders and .pyc files
+sys.dont_write_bytecode = True
+
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)

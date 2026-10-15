@@ -12,7 +12,7 @@ set PYTHONDONTWRITEBYTECODE=1
 :: Open browser automatically
 start "" http://localhost:5000
 
-:: Run EchoRisk AI
-python app.py
+:: Run EchoRisk AI with bytecode writing disabled (-B)
+python -B app.py
 
 pause

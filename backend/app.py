@@ -4,6 +4,10 @@ Backend Flask Application Entrypoint.
 """
 import os
 import sys
+
+# Prevent Python from creating __pycache__ folders or writing .pyc files
+sys.dont_write_bytecode = True
+
 import time
 import logging
 from collections import defaultdict
@@ -20,15 +24,15 @@ for path in (BACKEND_DIR, PROJECT_ROOT):
 load_dotenv(os.path.join(PROJECT_ROOT, ".env"))
 
 try:
-    from backend.utils.validators import validate_and_normalize_email, mask_email
-    from backend.services.breach_service import check_email_breaches, get_breach_detail
-    from backend.services.ai_service import analyze_risk_with_claude
-    from backend.services.report_service import assemble_final_report
+    from backend.input_validator import validate_and_normalize_email, mask_email
+    from backend.breach_intel import check_email_breaches, get_breach_detail
+    from backend.ai_risk_engine import analyze_risk_with_claude
+    from backend.report_builder import assemble_final_report
 except ImportError:
-    from utils.validators import validate_and_normalize_email, mask_email
-    from services.breach_service import check_email_breaches, get_breach_detail
-    from services.ai_service import analyze_risk_with_claude
-    from services.report_service import assemble_final_report
+    from input_validator import validate_and_normalize_email, mask_email
+    from breach_intel import check_email_breaches, get_breach_detail
+    from ai_risk_engine import analyze_risk_with_claude
+    from report_builder import assemble_final_report
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("echorisk-backend")
