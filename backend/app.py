@@ -77,11 +77,14 @@ def is_rate_limited(ip: str) -> bool:
 
 @app.after_request
 def set_security_headers(response):
-    """Applies hardened HTTP response security headers."""
+    """Applies hardened HTTP response security headers and disables client/proxy caching."""
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
 
     csp_directives = [
         "default-src 'self'",

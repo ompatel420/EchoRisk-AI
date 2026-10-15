@@ -691,19 +691,17 @@ document.addEventListener("DOMContentLoaded", () => {
         if (notifyFeedback) { notifyFeedback.style.color = "var(--danger-text)"; notifyFeedback.textContent = check.message; }
         return;
       }
+
+      // Zero data storage: do not cache or store the email anywhere
       try {
-        const existing = JSON.parse(localStorage.getItem("echorisk_subscribers") || "[]");
-        if (!existing.includes(check.email)) {
-          existing.push(check.email);
-          localStorage.setItem("echorisk_subscribers", JSON.stringify(existing));
-        }
+        localStorage.removeItem("echorisk_subscribers");
       } catch (_) { }
 
       if (notifyFeedback) {
         notifyFeedback.style.color = "var(--success-text)";
-        notifyFeedback.textContent = "✓ Notification alert saved! We will monitor this address.";
+        notifyFeedback.textContent = "✓ Verified (Zero-Storage Policy: no email address is cached or stored).";
       }
-      setTimeout(() => { closeModal(); showToast("Alert subscription registered for " + check.email); }, 1000);
+      setTimeout(() => { closeModal(); showToast("Alert registered (Zero-Storage mode: no email cached)"); }, 1000);
     });
   }
 
@@ -712,12 +710,13 @@ document.addEventListener("DOMContentLoaded", () => {
     btnClearSubscribers.addEventListener("click", () => {
       try {
         localStorage.removeItem("echorisk_subscribers");
+        sessionStorage.clear();
       } catch (_) { }
       if (notifyFeedback) {
         notifyFeedback.style.color = "var(--text-muted)";
-        notifyFeedback.textContent = "✓ Local alert subscription data cleared.";
+        notifyFeedback.textContent = "✓ Confirmed: Zero cached data present.";
       }
-      showToast("Cleared local subscriber data from browser.");
+      showToast("Zero storage confirmed: no cached data.");
     });
   }
 

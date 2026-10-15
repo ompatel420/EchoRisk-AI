@@ -14,8 +14,6 @@ logger = logging.getLogger(__name__)
 XON_BASE_URL = os.environ.get("XPOSEDORNOT_API_URL", "https://api.xposedornot.com/v1")
 MOCK_MODE = os.environ.get("MOCK_MODE", "false").lower() in ("true", "1", "yes")
 
-_BREACH_METADATA_CACHE: Dict[str, Dict[str, Any]] = {}
-
 # Known common breach information fallback directory
 KNOWN_BREACHES: Dict[str, Dict[str, Any]] = {
     "adobe": {
@@ -91,11 +89,8 @@ def _get_request_headers() -> Dict[str, str]:
 
 
 def fetch_all_breaches_catalog() -> Dict[str, Dict[str, Any]]:
-    """Fetches the catalog of known data breaches from XposedOrNot."""
-    global _BREACH_METADATA_CACHE
-    if _BREACH_METADATA_CACHE:
-        return _BREACH_METADATA_CACHE
-
+    """Fetches the catalog of known data breaches from XposedOrNot dynamically on demand with zero caching."""
+    catalog: Dict[str, Dict[str, Any]] = {}
     try:
         resp = requests.get(f"{XON_BASE_URL}/breaches", headers=_get_request_headers(), timeout=6)
         if resp.status_code == 200:
@@ -104,11 +99,11 @@ def fetch_all_breaches_catalog() -> Dict[str, Dict[str, Any]]:
             for item in items:
                 b_id = str(item.get("breachID") or item.get("breach_id") or item.get("name", "")).lower().strip()
                 if b_id:
-                    _BREACH_METADATA_CACHE[b_id] = item
+                    catalog[b_id] = item
     except Exception as e:
-        logger.warning(f"Could not refresh XposedOrNot breach catalog: {e}")
+        logger.warning(f"Could not fetch XposedOrNot breach catalog: {e}")
     
-    return _BREACH_METADATA_CACHE
+    return catalog
 
 
 def _detect_industry(key: str) -> str:
