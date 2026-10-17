@@ -45,7 +45,7 @@ Use this checklist when implementing and reviewing EchoRisk AI. Mark an item com
 - [x] Do not reveal whether another user has an account or saved report through different error messages or response timing.
 
 ### 3. Input validation and API security
-- [x] Validate and normalize email addresses on the server (`backend/utils/validators.py`); set reasonable maximum lengths (254 chars total, 64 user) and reject malformed input.
+- [x] Validate and normalize email addresses on the server (`backend/input_validator.py`); set reasonable maximum lengths (254 chars total, 64 user) and reject malformed input.
 - [x] Use parameterized database queries or a safe ORM (Zero SQL database used in V1, eliminating SQL injection surface).
 - [x] Enforce request-size limits (`MAX_CONTENT_LENGTH = 1MB`), timeouts (requests timeout=6s/8s), and strict content types (`request.is_json`).
 - [x] Apply rate limits to breach lookups (thread-safe sliding window rate limiter: 30 requests/minute per client IP with HTTP 429 response).

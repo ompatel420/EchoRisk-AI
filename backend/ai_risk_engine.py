@@ -139,6 +139,8 @@ def analyze_risk_with_claude(breach_facts: Dict[str, Any]) -> Dict[str, Any]:
         else:
             json_str = raw_text.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
         parsed = json.loads(json_str)
+        if not isinstance(parsed, dict):
+            raise ValueError("AI response is not a valid JSON dictionary")
         parsed["ai_powered"] = True
         parsed["fallback_used"] = False
         return parsed

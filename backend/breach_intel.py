@@ -136,7 +136,8 @@ def _normalize_breach_detail(breach_id: str, catalog: Dict[str, Dict[str, Any]])
     pwn_count = meta.get("exposedRecords") or meta.get("pwn_count") or meta.get("records") or fb.get("pwn_count") or 0
     desc = meta.get("exposureDescription") or meta.get("description") or fb.get("description") or f"Data from {title} was identified in compromised records on public databases."
     industry = meta.get("industry") or meta.get("category") or fb.get("industry") or _detect_industry(key)
-    logo_url = meta.get("logo") or fb.get("logo") or f"https://xposedornot.com/static/logos/{clean_id}.png"
+    clean_logo_id = clean_id.replace(" ", "")
+    logo_url = meta.get("logo") or fb.get("logo") or f"https://xposedornot.com/static/logos/{clean_logo_id}.png"
 
     raw_exp = meta.get("exposedData") or meta.get("exposed_data") or fb.get("exposed_data") or ["Email Addresses"]
     items = raw_exp.split(";") if isinstance(raw_exp, str) else (raw_exp if isinstance(raw_exp, list) else ["Email Addresses"])
@@ -197,8 +198,13 @@ def get_breach_detail(breach_identifier: str) -> Dict[str, Any]:
     years_ago = ""
     try:
         yr = int(str(detail.get("breach_date", "")).split("-")[0])
-        diff = max(1, datetime.now().year - yr)
-        years_ago = f"{diff} years ago" if diff > 1 else "1 year ago"
+        diff = datetime.now().year - yr
+        if diff <= 0:
+            years_ago = "This year"
+        elif diff == 1:
+            years_ago = "1 year ago"
+        else:
+            years_ago = f"{diff} years ago"
     except Exception:
         pass
 

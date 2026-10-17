@@ -159,7 +159,8 @@ def scan_email():
     if not request.is_json:
         return error_response("Request must be JSON.", "INVALID_CONTENT_TYPE", 400)
 
-    raw_email = (request.get_json() or {}).get("email")
+    body = request.get_json(silent=True) or {}
+    raw_email = body.get("email")
     is_valid, normalized_email, err_msg, suggestion = validate_and_normalize_email(raw_email)
     if not is_valid or not normalized_email:
         extra = {"suggestion": suggestion} if suggestion else {}
