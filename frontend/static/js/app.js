@@ -260,7 +260,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <span class="breach-exposed-label">Platform Data Exposed:</span>
                 <div class="breach-chips-mini">${chipsHtml}</div>
               </div>
-              <a href="${escapeHtml(refUrl)}" target="_blank" rel="opener" class="breach-reference-link" title="View details">
+              <a href="${escapeHtml(refUrl)}" class="breach-reference-link" title="View details">
                 <span>View Details &rarr;</span>
               </a>
             </div>
@@ -284,6 +284,9 @@ document.addEventListener("DOMContentLoaded", () => {
     currentBreaches = breaches;
     currentSummary = summary;
     renderBreachAnalyticsChart(currentBreaches, currentSummary, currentGraphView);
+
+    // Render interactive enterprise Digital Exposure Network Graph
+    renderDigitalExposureGraph(report);
 
     // Save report state for seamless navigation and return trips
     try {
@@ -540,6 +543,659 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   });
+
+  // ==========================================================================
+  // Professional Digital Exposure Graph Controller (Enterprise SaaS Topology)
+  // ==========================================================================
+  const exposureGraphState = {
+    report: null,
+    scale: 1.0,
+    panX: 0,
+    panY: 0,
+    isDragging: false,
+    dragStartX: 0,
+    dragStartY: 0,
+    filter: "all",
+    selectedNodeId: null,
+    initializedEvents: false
+  };
+
+  function updateExposureGraphTransform() {
+    const viewport = $("exposure-viewport");
+    if (viewport) {
+      viewport.setAttribute("transform", `translate(${exposureGraphState.panX}, ${exposureGraphState.panY}) scale(${exposureGraphState.scale})`);
+    }
+  }
+
+  function renderDigitalExposureGraph(report) {
+    if (!report) return;
+    exposureGraphState.report = report;
+    const breaches = report.breaches || [];
+    const summary = report.summary || {};
+    const targetEmail = report.scanned_target || summary.target_email_masked || (emailInput && emailInput.value) || "user@verified";
+
+    // 1. Update 4 Compact Statistics Above Graph
+    const statTotalId = $("exp-stat-total-id");
+    const statVerifiedId = $("exp-stat-verified-id");
+    const statBreaches = $("exp-stat-breaches");
+    const statCategories = $("exp-stat-categories");
+
+    const allCategories = new Set();
+    breaches.forEach(b => {
+      (b.exposed_data || []).forEach(cat => allCategories.add(cat));
+    });
+
+    if (statTotalId) statTotalId.textContent = "1";
+    if (statVerifiedId) statVerifiedId.textContent = "1";
+    if (statBreaches) statBreaches.textContent = breaches.length.toString();
+    if (statCategories) statCategories.textContent = allCategories.size.toString();
+
+    // 2. Setup Canvas Elements
+    const edgesLayer = $("exposure-edges-layer");
+    const nodesLayer = $("exposure-nodes-layer");
+    const emptyOverlay = $("exposure-empty-overlay");
+    const svgElem = $("exposure-network-svg");
+
+    if (!edgesLayer || !nodesLayer || !svgElem) return;
+
+    edgesLayer.innerHTML = "";
+    nodesLayer.innerHTML = "";
+    exposureGraphState.selectedNodeId = null;
+
+    // Reset Zoom / Pan to default
+    exposureGraphState.scale = 1.0;
+    exposureGraphState.panX = 0;
+    exposureGraphState.panY = 0;
+    updateExposureGraphTransform();
+
+    // Attach canvas interactive controls once
+    initExposureGraphInteractions(svgElem);
+
+    // 3. Handle Empty State
+    if (breaches.length === 0) {
+      if (emptyOverlay) emptyOverlay.classList.remove("hidden");
+      renderEmptyTopologyGraph(targetEmail, nodesLayer);
+      renderInspectorInitialState(targetEmail, breaches, allCategories);
+      return;
+    } else {
+      if (emptyOverlay) emptyOverlay.classList.add("hidden");
+    }
+
+    // 4. Calculate Topology Layout Geometry
+    const svgNS = "http://www.w3.org/2000/svg";
+    const totalBreaches = breaches.length;
+    const breachGap = 92;
+    const totalBreachHeight = Math.max(400, totalBreaches * breachGap + 60);
+    const centerY = totalBreachHeight / 2;
+
+    // Adjust SVG viewBox height if many breaches
+    svgElem.setAttribute("viewBox", `0 0 960 ${totalBreachHeight}`);
+
+    // Level 1: Digital Identity Root Node
+    const l1X = 50;
+    const l1Y = centerY - 38;
+    const l1W = 190;
+    const l1H = 76;
+
+    // Level 2: Email Identifier Node
+    const l2X = 320;
+    const l2Y = centerY - 42;
+    const l2W = 230;
+    const l2H = 84;
+
+    // Level 3: Breach Nodes
+    const l3X = 640;
+    const l3W = 270;
+    const l3H = 78;
+    const breachStartY = centerY - ((totalBreaches - 1) * breachGap) / 2 - 39;
+
+    // Create Edges
+    // Level 1 -> Level 2
+    createExposureSvgEdge("edge-l1-l2", l1X + l1W, centerY, l2X, centerY, edgesLayer);
+
+    // Level 2 -> Level 3 (one edge per verified breach)
+    breaches.forEach((b, idx) => {
+      const bY = breachStartY + idx * breachGap + 39;
+      createExposureSvgEdge(`edge-l2-b${idx}`, l2X + l2W, centerY, l3X, bY, edgesLayer);
+    });
+
+    // Create Level 1 Node
+    const nodeIdentity = createSvgIdentityNode(l1X, l1Y, l1W, l1H);
+    nodeIdentity.addEventListener("click", (e) => {
+      e.stopPropagation();
+      selectExposureNode("node-identity", { targetEmail, breaches, allCategories });
+    });
+    nodesLayer.appendChild(nodeIdentity);
+
+    // Create Level 2 Node
+    const nodeEmail = createSvgEmailNode(l2X, l2Y, l2W, l2H, targetEmail, totalBreaches);
+    nodeEmail.addEventListener("click", (e) => {
+      e.stopPropagation();
+      selectExposureNode("node-email", { targetEmail, breaches, allCategories });
+    });
+    nodesLayer.appendChild(nodeEmail);
+
+    // Create Level 3 Nodes
+    breaches.forEach((b, idx) => {
+      const bY = breachStartY + idx * breachGap;
+      const nodeBreach = createSvgBreachNode(`node-breach-${idx}`, l3X, bY, l3W, l3H, b);
+      nodeBreach.addEventListener("click", (e) => {
+        e.stopPropagation();
+        selectExposureNode(`node-breach-${idx}`, { targetEmail, breaches, breach: b, index: idx });
+      });
+      nodesLayer.appendChild(nodeBreach);
+    });
+
+    // Populate Initial Inspector Panel
+    renderInspectorInitialState(targetEmail, breaches, allCategories);
+  }
+
+  // --- SVG Helper Generators ---
+  function createExposureSvgEdge(id, x1, y1, x2, y2, container) {
+    const svgNS = "http://www.w3.org/2000/svg";
+    const path = document.createElementNS(svgNS, "path");
+    const dx = Math.max(30, (x2 - x1) * 0.55);
+    const d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+    path.setAttribute("id", id);
+    path.setAttribute("class", "exp-edge");
+    path.setAttribute("d", d);
+    container.appendChild(path);
+    return path;
+  }
+
+  function createSvgIdentityNode(x, y, w, h) {
+    const svgNS = "http://www.w3.org/2000/svg";
+    const g = document.createElementNS(svgNS, "g");
+    g.setAttribute("id", "node-identity");
+    g.setAttribute("class", "exp-node exp-node-identity");
+    g.setAttribute("data-level", "1");
+    g.setAttribute("data-type", "identity");
+    g.setAttribute("transform", `translate(${x}, ${y})`);
+
+    g.innerHTML = `
+      <rect width="${w}" height="${h}" rx="10" filter="url(#glow-identity)"></rect>
+      <!-- Shield / Profile Icon -->
+      <g transform="translate(14, 18)">
+        <circle cx="16" cy="16" r="16" fill="rgba(37, 99, 235, 0.22)" stroke="#3B82F6" stroke-width="1.2"></circle>
+        <path d="M16 10a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 10c-3.5 0-7 1.75-7 3.5v.5h14v-.5c0-1.75-3.5-3.5-7-3.5z" fill="#60A5FA"></path>
+      </g>
+      <text x="56" y="32" fill="#F8FAFC" font-size="12" font-weight="700">Digital Identity</text>
+      <text x="56" y="48" fill="#94A3B8" font-size="10" font-weight="500">Verified Root Profile</text>
+      <text x="56" y="62" fill="#38BDF8" font-size="9" font-weight="600">&#10003; Level 1 Root</text>
+    `;
+    return g;
+  }
+
+  function createSvgEmailNode(x, y, w, h, email, breachCount) {
+    const svgNS = "http://www.w3.org/2000/svg";
+    const g = document.createElementNS(svgNS, "g");
+    g.setAttribute("id", "node-email");
+    g.setAttribute("class", "exp-node exp-node-identifier");
+    g.setAttribute("data-level", "2");
+    g.setAttribute("data-type", "identifier");
+    g.setAttribute("transform", `translate(${x}, ${y})`);
+
+    const maskedText = escapeHtml(email);
+    const countLabel = breachCount === 1 ? "1 Incident" : `${breachCount} Incidents`;
+
+    g.innerHTML = `
+      <rect width="${w}" height="${h}" rx="10"></rect>
+      <!-- Mail Icon Circle -->
+      <g transform="translate(12, 16)">
+        <circle cx="16" cy="16" r="16" fill="rgba(99, 102, 241, 0.2)" stroke="#6366F1" stroke-width="1.2"></circle>
+        <path d="M10 12h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H10a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1zm6 4.5l-5-3.5m10 0l-5 3.5" stroke="#A5B4FC" stroke-width="1.5" stroke-linecap="round" fill="none"></path>
+      </g>
+      <text x="52" y="30" fill="#E2E8F0" font-size="11.5" font-weight="700">${maskedText}</text>
+      <text x="52" y="46" fill="#94A3B8" font-size="9.5" font-weight="500">Email Identifier &middot; Level 2</text>
+      <!-- Status Badges inside Node -->
+      <rect x="52" y="54" width="62" height="18" rx="4" fill="rgba(16, 185, 129, 0.16)" stroke="rgba(16, 185, 129, 0.4)" stroke-width="1"></rect>
+      <text x="58" y="66" fill="#34D399" font-size="8.5" font-weight="700">&#10003; VERIFIED</text>
+      
+      <rect x="120" y="54" width="80" height="18" rx="4" fill="rgba(239, 68, 68, 0.18)" stroke="rgba(239, 68, 68, 0.4)" stroke-width="1"></rect>
+      <text x="126" y="66" fill="#F87171" font-size="8.5" font-weight="700">&#9888; ${countLabel}</text>
+    `;
+    return g;
+  }
+
+  function createSvgBreachNode(id, x, y, w, h, breach) {
+    const svgNS = "http://www.w3.org/2000/svg";
+    const g = document.createElementNS(svgNS, "g");
+    g.setAttribute("id", id);
+    g.setAttribute("class", "exp-node exp-node-breach");
+    g.setAttribute("data-level", "3");
+    g.setAttribute("data-type", "breach");
+    g.setAttribute("transform", `translate(${x}, ${y})`);
+
+    const hasPwd = breach.has_password_exposure || (breach.exposed_data || []).some(d => /password|hash/i.test(d));
+    const title = escapeHtml(breach.breach_title || breach.breach_id || "Breach Record");
+    const date = escapeHtml(breach.breach_date || "Unknown Date");
+    const catCount = (breach.exposed_data || []).length;
+    const catLabel = catCount > 0 ? `${catCount} Data Types` : "Platform Leak";
+
+    g.innerHTML = `
+      <rect width="${w}" height="${h}" rx="10" filter="url(#glow-breach)"></rect>
+      <!-- Incident Alert Icon Circle -->
+      <g transform="translate(12, 14)">
+        <circle cx="16" cy="16" r="16" fill="rgba(239, 68, 68, 0.2)" stroke="#EF4444" stroke-width="1.2"></circle>
+        <path d="M16 11v6m0 3h.01" stroke="#FCA5A5" stroke-width="2" stroke-linecap="round"></path>
+      </g>
+      <text x="52" y="28" fill="#F8FAFC" font-size="12" font-weight="700">${title}</text>
+      <text x="52" y="44" fill="#94A3B8" font-size="9.5" font-weight="500">Incident: ${date}</text>
+      <!-- Badges -->
+      <rect x="52" y="52" width="76" height="17" rx="4" fill="${hasPwd ? 'rgba(239, 68, 68, 0.22)' : 'rgba(245, 158, 11, 0.2)'}" stroke="${hasPwd ? '#EF4444' : '#F59E0B'}" stroke-width="1"></rect>
+      <text x="58" y="64" fill="${hasPwd ? '#FCA5A5' : '#FCD34D'}" font-size="8.5" font-weight="700">${hasPwd ? 'CRITICAL RISK' : 'MODERATE RISK'}</text>
+      
+      <rect x="134" y="52" width="96" height="17" rx="4" fill="rgba(30, 41, 59, 0.8)" stroke="#475569" stroke-width="1"></rect>
+      <text x="140" y="64" fill="#CBD5E1" font-size="8.5" font-weight="600">${catLabel}</text>
+    `;
+    return g;
+  }
+
+  function renderEmptyTopologyGraph(targetEmail, container) {
+    const svgNS = "http://www.w3.org/2000/svg";
+    const g = document.createElementNS(svgNS, "g");
+    g.setAttribute("transform", "translate(340, 200)");
+    g.innerHTML = `
+      <rect width="280" height="90" rx="12" fill="#0F172A" stroke="#10B981" stroke-width="1.8" filter="url(#glow-identity)"></rect>
+      <circle cx="34" cy="45" r="18" fill="rgba(16, 185, 129, 0.2)" stroke="#10B981" stroke-width="1.5"></circle>
+      <path d="M28 45l4 4 8-8" stroke="#34D399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+      <text x="64" y="38" fill="#F8FAFC" font-size="12" font-weight="700">${escapeHtml(targetEmail)}</text>
+      <text x="64" y="54" fill="#34D399" font-size="10" font-weight="600">&#10003; 100% Verified Clean Record</text>
+      <text x="64" y="70" fill="#94A3B8" font-size="9" font-weight="500">Zero matching breach exposures detected</text>
+    `;
+    container.appendChild(g);
+  }
+
+  // --- Inspector Panel Rendering ---
+  function renderInspectorInitialState(email, breaches, categories) {
+    const badge = $("inspector-badge");
+    const title = $("inspector-title");
+    const body = $("inspector-body");
+    if (!badge || !title || !body) return;
+
+    badge.textContent = "TOPOLOGY OVERVIEW";
+    title.textContent = breaches.length > 0 ? "Digital Exposure Map" : "Identity Verified Clean";
+
+    body.innerHTML = `
+      <div class="inspector-section">
+        <h5 class="inspector-subhead">Verified Profile</h5>
+        <div class="inspector-meta-list">
+          <div class="inspector-meta-row">
+            <span class="inspector-meta-label">Primary Identifier:</span>
+            <span class="inspector-meta-val">${escapeHtml(email)}</span>
+          </div>
+          <div class="inspector-meta-row">
+            <span class="inspector-meta-label">Identity Status:</span>
+            <span class="inspector-meta-val" style="color: #34D399;">&#10003; Validated</span>
+          </div>
+          <div class="inspector-meta-row">
+            <span class="inspector-meta-label">Verified Breaches:</span>
+            <span class="inspector-meta-val" style="color: ${breaches.length ? '#F87171' : '#34D399'};">${breaches.length} Linked</span>
+          </div>
+          <div class="inspector-meta-row">
+            <span class="inspector-meta-label">Exposed Categories:</span>
+            <span class="inspector-meta-val">${categories.size} Types</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="inspector-section">
+        <h5 class="inspector-subhead">Interactive Navigation</h5>
+        <div class="inspector-rec-box">
+          Click any <strong>Identifier</strong> or <strong>Breach</strong> node inside the graph to inspect threat source intelligence, platform credentials, and prioritized defense actions.
+        </div>
+      </div>
+    `;
+  }
+
+  function selectExposureNode(nodeId, data) {
+    exposureGraphState.selectedNodeId = nodeId;
+    const allNodes = document.querySelectorAll(".exp-node");
+    const allEdges = document.querySelectorAll(".exp-edge");
+
+    // 1. Reset Dimming & Selection
+    allNodes.forEach(n => {
+      n.classList.remove("selected", "dimmed");
+    });
+    allEdges.forEach(e => {
+      e.classList.remove("highlighted", "dimmed");
+    });
+
+    const targetNode = $(nodeId);
+    if (targetNode) targetNode.classList.add("selected");
+
+    // 2. Highlight Paths based on Node Type
+    if (nodeId === "node-identity") {
+      const e1 = $("edge-l1-l2");
+      if (e1) e1.classList.add("highlighted");
+      allEdges.forEach(e => { if (e !== e1) e.classList.add("dimmed"); });
+      allNodes.forEach(n => {
+        const id = n.getAttribute("id");
+        if (id !== "node-identity" && id !== "node-email") n.classList.add("dimmed");
+      });
+      renderInspectorIdentity(data);
+    } else if (nodeId === "node-email") {
+      allEdges.forEach(e => e.classList.add("highlighted"));
+      renderInspectorIdentifier(data);
+    } else if (nodeId.startsWith("node-breach-")) {
+      const idx = data.index;
+      const targetEdge = $(`edge-l2-b${idx}`);
+      if (targetEdge) targetEdge.classList.add("highlighted");
+      allEdges.forEach(e => { if (e !== targetEdge) e.classList.add("dimmed"); });
+      allNodes.forEach(n => {
+        const id = n.getAttribute("id");
+        if (id !== nodeId && id !== "node-email") n.classList.add("dimmed");
+      });
+      renderInspectorBreach(data.breach);
+    }
+  }
+
+  function renderInspectorIdentity(data) {
+    const badge = $("inspector-badge");
+    const title = $("inspector-title");
+    const body = $("inspector-body");
+    if (!badge || !title || !body) return;
+
+    badge.textContent = "ROOT IDENTITY PROFILE";
+    title.textContent = "Your Digital Identity";
+
+    body.innerHTML = `
+      <div class="inspector-section">
+        <h5 class="inspector-subhead">Node Verification Details</h5>
+        <div class="inspector-meta-list">
+          <div class="inspector-meta-row">
+            <span class="inspector-meta-label">Hierarchy Level:</span>
+            <span class="inspector-meta-val">Level 1 (Root Identity)</span>
+          </div>
+          <div class="inspector-meta-row">
+            <span class="inspector-meta-label">Associated Identifiers:</span>
+            <span class="inspector-meta-val">1 Verified Email</span>
+          </div>
+          <div class="inspector-meta-row">
+            <span class="inspector-meta-label">Data Storage Policy:</span>
+            <span class="inspector-meta-val" style="color: #34D399;">Zero Data Retention</span>
+          </div>
+        </div>
+      </div>
+      <div class="inspector-section">
+        <h5 class="inspector-subhead">Identity Defense Guidance</h5>
+        <div class="inspector-rec-box">
+          This root node anchors your digital exposure perimeter. All breach incident connections are verified directly against global threat intelligence records.
+        </div>
+      </div>
+    `;
+  }
+
+  function renderInspectorIdentifier(data) {
+    const badge = $("inspector-badge");
+    const title = $("inspector-title");
+    const body = $("inspector-body");
+    if (!badge || !title || !body) return;
+
+    badge.textContent = "VERIFIED IDENTIFIER";
+    title.textContent = escapeHtml(data.targetEmail);
+
+    const breaches = data.breaches || [];
+    const hasAnyPwd = breaches.some(b => b.has_password_exposure || (b.exposed_data || []).some(d => /password|hash/i.test(d)));
+
+    const breachItemsHtml = breaches.slice(0, 4).map(b => `
+      <div class="inspector-meta-row">
+        <span>${escapeHtml(b.breach_title)}</span>
+        <span style="color: ${b.has_password_exposure ? '#F87171' : '#FCD34D'}; font-weight:700;">
+          ${b.has_password_exposure ? '&#9888; Password Leaked' : 'Exposed'}
+        </span>
+      </div>
+    `).join("");
+
+    body.innerHTML = `
+      <div class="inspector-section">
+        <h5 class="inspector-subhead">Identifier Telemetry</h5>
+        <div class="inspector-meta-list">
+          <div class="inspector-meta-row">
+            <span class="inspector-meta-label">Identifier Type:</span>
+            <span class="inspector-meta-val">Email Address (Level 2)</span>
+          </div>
+          <div class="inspector-meta-row">
+            <span class="inspector-meta-label">Verification Source:</span>
+            <span class="inspector-meta-val" style="color: #34D399;">&#10003; MX/DNS Handshake</span>
+          </div>
+          <div class="inspector-meta-row">
+            <span class="inspector-meta-label">Matching Breaches:</span>
+            <span class="inspector-meta-val" style="color: ${breaches.length ? '#F87171' : '#34D399'};">${breaches.length} Found</span>
+          </div>
+          <div class="inspector-meta-row">
+            <span class="inspector-meta-label">Credential Stuffing Risk:</span>
+            <span class="inspector-meta-val" style="color: ${hasAnyPwd ? '#F87171' : '#FCD34D'};">${hasAnyPwd ? 'CRITICAL' : 'MODERATE'}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="inspector-section">
+        <h5 class="inspector-subhead">Linked Incidents</h5>
+        <div class="inspector-meta-list">
+          ${breachItemsHtml || '<span class="inspector-meta-label">None</span>'}
+        </div>
+      </div>
+
+      <div class="inspector-section">
+        <h5 class="inspector-subhead">Recommended Countermeasures</h5>
+        <div class="inspector-rec-box">
+          ${hasAnyPwd 
+            ? "Immediate password reset recommended across all accounts sharing credentials with these leaked platforms. Enable 2FA on your email provider." 
+            : "No passwords exposed directly. Monitor this email address for phishing emails referencing these platforms."}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderInspectorBreach(breach) {
+    const badge = $("inspector-badge");
+    const title = $("inspector-title");
+    const body = $("inspector-body");
+    if (!badge || !title || !body || !breach) return;
+
+    const bTitle = breach.breach_title || breach.breach_id || "Breach Incident";
+    const domain = breach.domain || "N/A";
+    const date = breach.breach_date || "Unknown";
+    const records = breach.pwn_count ? formatNumber(breach.pwn_count) : "Disclosed Record";
+    const hasPwd = breach.has_password_exposure || (breach.exposed_data || []).some(d => /password|hash/i.test(d));
+    const exposedData = breach.exposed_data || [];
+
+    badge.textContent = "CONFIRMED BREACH RECORD";
+    title.textContent = escapeHtml(bTitle);
+
+    const chipsHtml = exposedData.map(item => {
+      const isPwd = /password|hash/i.test(item);
+      return `<span class="inspector-chip ${isPwd ? 'pwd' : ''}">${isPwd ? '&#128274; ' : ''}${escapeHtml(item)}</span>`;
+    }).join("");
+
+    body.innerHTML = `
+      <div class="inspector-section">
+        <h5 class="inspector-subhead">Incident Dossier</h5>
+        <div class="inspector-meta-list">
+          <div class="inspector-meta-row">
+            <span class="inspector-meta-label">Platform Domain:</span>
+            <span class="inspector-meta-val">${escapeHtml(domain)}</span>
+          </div>
+          <div class="inspector-meta-row">
+            <span class="inspector-meta-label">Incident Date:</span>
+            <span class="inspector-meta-val">${escapeHtml(date)}</span>
+          </div>
+          <div class="inspector-meta-row">
+            <span class="inspector-meta-label">Exposed Accounts:</span>
+            <span class="inspector-meta-val">${escapeHtml(records)}</span>
+          </div>
+          <div class="inspector-meta-row">
+            <span class="inspector-meta-label">Threat Source:</span>
+            <span class="inspector-meta-val" style="color: #60A5FA;">XposedOrNot Verified</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="inspector-section">
+        <h5 class="inspector-subhead">Compromised Data Categories (${exposedData.length})</h5>
+        <div class="inspector-chips-row">
+          ${chipsHtml || '<span class="inspector-meta-label">No categories detailed</span>'}
+        </div>
+      </div>
+
+      <div class="inspector-section">
+        <h5 class="inspector-subhead">Actionable Countermeasure</h5>
+        <div class="inspector-rec-box">
+          ${hasPwd 
+            ? `Credentials from <strong>${escapeHtml(bTitle)}</strong> were leaked. Change passwords immediately on this service and any account sharing this password.` 
+            : `Personal metadata from <strong>${escapeHtml(bTitle)}</strong> was exposed. Be vigilant against targeted spear-phishing.`}
+        </div>
+      </div>
+
+      <a href="/breach/${encodeURIComponent(bTitle)}" class="inspector-cta-btn">
+        <span>View Full Incident Dossier &rarr;</span>
+      </a>
+    `;
+  }
+
+  // --- Graph Pan, Zoom & Filter Event Handlers ---
+  function initExposureGraphInteractions(svgElem) {
+    if (exposureGraphState.initializedEvents) return;
+    exposureGraphState.initializedEvents = true;
+
+    // Deselect on clicking canvas background
+    svgElem.addEventListener("click", () => {
+      exposureGraphState.selectedNodeId = null;
+      document.querySelectorAll(".exp-node").forEach(n => n.classList.remove("selected", "dimmed"));
+      document.querySelectorAll(".exp-edge").forEach(e => e.classList.remove("highlighted", "dimmed"));
+      if (exposureGraphState.report) {
+        const breaches = exposureGraphState.report.breaches || [];
+        const summary = exposureGraphState.report.summary || {};
+        const email = exposureGraphState.report.scanned_target || summary.target_email_masked || "Verified Profile";
+        const allCategories = new Set();
+        breaches.forEach(b => (b.exposed_data || []).forEach(cat => allCategories.add(cat)));
+        renderInspectorInitialState(email, breaches, allCategories);
+      }
+    });
+
+    // Mouse Dragging to Pan Canvas
+    const container = $("exposure-canvas-container");
+    if (container) {
+      container.addEventListener("mousedown", (e) => {
+        // Only initiate pan if not clicking a node directly
+        if (e.target.closest(".exp-node")) return;
+        exposureGraphState.isDragging = true;
+        exposureGraphState.dragStartX = e.clientX - exposureGraphState.panX;
+        exposureGraphState.dragStartY = e.clientY - exposureGraphState.panY;
+      });
+
+      window.addEventListener("mousemove", (e) => {
+        if (!exposureGraphState.isDragging) return;
+        exposureGraphState.panX = e.clientX - exposureGraphState.dragStartX;
+        exposureGraphState.panY = e.clientY - exposureGraphState.dragStartY;
+        updateExposureGraphTransform();
+      });
+
+      window.addEventListener("mouseup", () => {
+        exposureGraphState.isDragging = false;
+      });
+
+      // Mouse Wheel Zoom
+      container.addEventListener("wheel", (e) => {
+        e.preventDefault();
+        const delta = e.deltaY < 0 ? 0.12 : -0.12;
+        exposureGraphState.scale = Math.min(2.5, Math.max(0.55, exposureGraphState.scale + delta));
+        updateExposureGraphTransform();
+      }, { passive: false });
+
+      // Touch Pan Support on Mobile
+      let touchStartX = 0;
+      let touchStartY = 0;
+      container.addEventListener("touchstart", (e) => {
+        if (e.touches.length === 1 && !e.target.closest(".exp-node")) {
+          touchStartX = e.touches[0].clientX - exposureGraphState.panX;
+          touchStartY = e.touches[0].clientY - exposureGraphState.panY;
+          exposureGraphState.isDragging = true;
+        }
+      }, { passive: true });
+
+      container.addEventListener("touchmove", (e) => {
+        if (exposureGraphState.isDragging && e.touches.length === 1) {
+          exposureGraphState.panX = e.touches[0].clientX - touchStartX;
+          exposureGraphState.panY = e.touches[0].clientY - touchStartY;
+          updateExposureGraphTransform();
+        }
+      }, { passive: true });
+
+      container.addEventListener("touchend", () => {
+        exposureGraphState.isDragging = false;
+      });
+    }
+
+    // Zoom & Reset Buttons
+    const btnZoomIn = $("graph-zoom-in");
+    if (btnZoomIn) {
+      btnZoomIn.addEventListener("click", () => {
+        exposureGraphState.scale = Math.min(2.5, exposureGraphState.scale + 0.15);
+        updateExposureGraphTransform();
+      });
+    }
+
+    const btnZoomOut = $("graph-zoom-out");
+    if (btnZoomOut) {
+      btnZoomOut.addEventListener("click", () => {
+        exposureGraphState.scale = Math.max(0.55, exposureGraphState.scale - 0.15);
+        updateExposureGraphTransform();
+      });
+    }
+
+    const btnFit = $("graph-fit-screen");
+    const btnReset = $("graph-reset-view");
+    [btnFit, btnReset].forEach(btn => {
+      if (btn) {
+        btn.addEventListener("click", () => {
+          exposureGraphState.scale = 1.0;
+          exposureGraphState.panX = 0;
+          exposureGraphState.panY = 0;
+          updateExposureGraphTransform();
+        });
+      }
+    });
+
+    // Category Filter Buttons
+    document.querySelectorAll(".exposure-filter-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".exposure-filter-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        const filterType = btn.getAttribute("data-filter") || "all";
+        exposureGraphState.filter = filterType;
+
+        const allNodes = document.querySelectorAll(".exp-node");
+        const allEdges = document.querySelectorAll(".exp-edge");
+
+        if (filterType === "all") {
+          allNodes.forEach(n => n.classList.remove("dimmed"));
+          allEdges.forEach(e => e.classList.remove("dimmed"));
+        } else if (filterType === "identifier") {
+          allNodes.forEach(n => {
+            const level = n.getAttribute("data-level");
+            if (level === "3") n.classList.add("dimmed");
+            else n.classList.remove("dimmed");
+          });
+          allEdges.forEach(e => {
+            if (e.id.includes("b")) e.classList.add("dimmed");
+            else e.classList.remove("dimmed");
+          });
+        } else if (filterType === "breach") {
+          allNodes.forEach(n => {
+            const level = n.getAttribute("data-level");
+            if (level === "1") n.classList.add("dimmed");
+            else n.classList.remove("dimmed");
+          });
+          allEdges.forEach(e => {
+            if (e.id === "edge-l1-l2") e.classList.add("dimmed");
+            else e.classList.remove("dimmed");
+          });
+        }
+      });
+    });
+  }
 
   // --- Dedicated Incident Dossier Chart Controller ---
   function renderDossierBreachChart(canvas, breach) {
@@ -1023,7 +1679,7 @@ document.addEventListener("DOMContentLoaded", () => {
       savedEmail = sessionStorage.getItem("echorisk_last_email");
     } catch (e) {}
 
-    if (savedReport && pendingAction !== "scan_another") {
+    if (savedReport) {
       try {
         const parsedReport = JSON.parse(savedReport);
         renderScanReport(parsedReport, false, false);
@@ -1036,10 +1692,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (pendingAction === "scan_another") {
-      setTimeout(triggerScanAnotherEmail, 150);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      setTimeout(() => {
+        if (emailInput) {
+          emailInput.focus();
+          emailInput.select();
+        }
+      }, 180);
     } else if (pendingAction === "back_to_scanner") {
       if (reportSection && !reportSection.classList.contains("hidden")) {
         setTimeout(() => reportSection.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
+      }
+    } else if (pendingAction && pendingAction.startsWith("scroll_to:")) {
+      const targetId = pendingAction.split(":")[1];
+      if ($(targetId)) {
+        setTimeout(() => scrollToTarget(targetId), 200);
       }
     } else if (window.location.hash) {
       const hashId = window.location.hash.slice(1);
@@ -1112,6 +1779,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try { sessionStorage.setItem("echorisk_pending_action", "back_to_scanner"); } catch (e) {}
         window.location.href = "/#report-section";
       } else {
+        try { sessionStorage.setItem("echorisk_pending_action", `scroll_to:${target}`); } catch (e) {}
         window.location.href = `/#${target}`;
       }
     }
