@@ -161,7 +161,7 @@ class TestFlaskEndpoints(unittest.TestCase):
         res = self.client.get("/")
         self.assertEqual(res.status_code, 200)
         self.assertIn(b"EchoRisk", res.data)
-        self.assertIn(b"Digital Exposure Graph", res.data)
+        self.assertIn(b"Breach Exposure Analytics", res.data)
 
     def test_breach_detail_page(self):
         res = self.client.get("/breach/Raaga")
@@ -179,6 +179,12 @@ class TestFlaskEndpoints(unittest.TestCase):
     def test_scan_invalid_payloads(self):
         res = self.client.post("/api/scan", data="not json", content_type="text/plain")
         self.assertEqual(res.status_code, 400)
+
+        # Non-dictionary JSON payload
+        res = self.client.post("/api/scan", json=["invalid", "array"])
+        self.assertEqual(res.status_code, 400)
+        data = res.get_json()
+        self.assertEqual(data["code"], "INVALID_PAYLOAD")
 
         res = self.client.post("/api/scan", json={"email": "invalid-email"})
         self.assertEqual(res.status_code, 400)
@@ -212,6 +218,24 @@ class TestFlaskEndpoints(unittest.TestCase):
         data = blocked_res.get_json()
         self.assertEqual(data["code"], "RATE_LIMIT_EXCEEDED")
 
+    def test_rate_limiting_ip_spoofing_blocked(self):
+        # When TRUST_PROXY is false (default), spoofed X-Forwarded-For should not bypass rate limiting
+        for _ in range(30):
+            res = self.client.post(
+                "/api/scan",
+                json={"email": "safe@example.com"},
+                headers={"X-Forwarded-For": "198.51.100.1"}
+            )
+            self.assertEqual(res.status_code, 200)
+
+        blocked_res = self.client.post(
+            "/api/scan",
+            json={"email": "safe@example.com"},
+            headers={"X-Forwarded-For": "203.0.113.99"}
+        )
+        self.assertEqual(blocked_res.status_code, 429)
+
 
 if __name__ == "__main__":
     unittest.main()
+

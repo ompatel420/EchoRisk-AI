@@ -126,6 +126,7 @@ def fetch_all_breaches_catalog() -> Dict[str, Dict[str, Any]]:
     with _catalog_lock:
         if _catalog_cache:
             return _catalog_cache
+
     return catalog
 
 
@@ -289,7 +290,6 @@ def check_email_breaches(normalized_email: str) -> Dict[str, Any]:
 
     # 2. Live API Request
     api_url = f"{XON_BASE_URL}/check-email/{normalized_email}"
-    catalog = fetch_all_breaches_catalog()
 
     try:
         resp = requests.get(api_url, headers=_get_request_headers(), timeout=8)
@@ -312,6 +312,8 @@ def check_email_breaches(normalized_email: str) -> Dict[str, Any]:
 
         if not breach_names:
             return _empty_breach_response("success", "No matching breaches found in checked source.")
+
+        catalog = fetch_all_breaches_catalog()
 
         normalized_breaches = []
         all_data_types = set()

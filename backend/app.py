@@ -42,7 +42,7 @@ app = Flask(
     template_folder=os.path.join(PROJECT_ROOT, "frontend", "templates"),
     static_folder=os.path.join(PROJECT_ROOT, "frontend", "static")
 )
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "echorisk-dev-secret-key-default")
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY") or os.urandom(24).hex()
 app.config["MAX_CONTENT_LENGTH"] = 1 * 1024 * 1024  # 1 MB payload limit
 
 RATE_LIMIT_WINDOW = 60
@@ -70,7 +70,6 @@ def is_rate_limited(ip: str) -> bool:
     """Thread-safe sliding window rate check with periodic stale-IP memory cleanup."""
     now = time.time()
     with _rate_limit_lock:
-        # Prevent unbounded dictionary growth from one-off crawlers/visitors
         if len(_ip_request_timestamps) > 500:
             stale_ips = [k for k, v in _ip_request_timestamps.items() if not v or (now - v[-1] >= RATE_LIMIT_WINDOW)]
             for k in stale_ips:
@@ -167,7 +166,10 @@ def scan_email():
     if not request.is_json:
         return error_response("Request must be JSON.", "INVALID_CONTENT_TYPE", 400)
 
-    body = request.get_json(silent=True) or {}
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return error_response("Request payload must be a JSON object.", "INVALID_PAYLOAD", 400)
+
     raw_email = body.get("email")
     is_valid, normalized_email, err_msg, suggestion = validate_and_normalize_email(raw_email)
     if not is_valid or not normalized_email:

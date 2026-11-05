@@ -141,6 +141,13 @@ def analyze_risk_with_claude(breach_facts: Dict[str, Any]) -> Dict[str, Any]:
         parsed = json.loads(json_str)
         if not isinstance(parsed, dict):
             raise ValueError("AI response is not a valid JSON dictionary")
+        valid_levels = ("Low", "Moderate", "High", "Critical")
+        if parsed.get("risk_level") not in valid_levels:
+            raise ValueError(f"Invalid risk_level in AI response: {parsed.get('risk_level')}")
+        score = parsed.get("risk_score")
+        if not isinstance(score, (int, float)) or not (1 <= score <= 100):
+            raise ValueError(f"Invalid risk_score in AI response: {score}")
+        parsed["risk_score"] = int(round(score))
         parsed["ai_powered"] = True
         parsed["fallback_used"] = False
         return parsed
