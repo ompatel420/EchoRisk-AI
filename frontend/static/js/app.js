@@ -155,7 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Render Scan Report ---
-  function renderScanReport(report) {
+  function renderScanReport(report, shouldScroll = true, showToastMsg = true) {
     if (scanLoading) scanLoading.classList.add("hidden");
     if (checkBtn) { checkBtn.disabled = false; checkBtn.classList.remove("loading"); }
 
@@ -260,7 +260,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <span class="breach-exposed-label">Platform Data Exposed:</span>
                 <div class="breach-chips-mini">${chipsHtml}</div>
               </div>
-              <a href="${escapeHtml(refUrl)}" target="_blank" class="breach-reference-link" title="View details">
+              <a href="${escapeHtml(refUrl)}" target="_blank" rel="opener" class="breach-reference-link" title="View details">
                 <span>View Details &rarr;</span>
               </a>
             </div>
@@ -285,11 +285,23 @@ document.addEventListener("DOMContentLoaded", () => {
     currentSummary = summary;
     renderBreachAnalyticsChart(currentBreaches, currentSummary, currentGraphView);
 
+    // Save report state for seamless navigation and return trips
+    try {
+      sessionStorage.setItem("echorisk_last_report", JSON.stringify(report));
+      if (emailInput && emailInput.value) {
+        sessionStorage.setItem("echorisk_last_email", emailInput.value);
+      }
+    } catch (e) {}
+
     if (reportSection) {
       reportSection.classList.remove("hidden");
-      reportSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (shouldScroll) {
+        reportSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     }
-    showToast("Scan complete: Security report generated.");
+    if (showToastMsg) {
+      showToast("Scan complete: Security report generated.");
+    }
   }
 
   // --- Breach Analytics Chart Controller ---
@@ -632,18 +644,26 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  if (btnScanAnother && emailInput && reportSection) {
-    btnScanAnother.addEventListener("click", () => {
-      if (breachChartInstance) {
-        breachChartInstance.destroy();
-        breachChartInstance = null;
-      }
-      reportSection.classList.add("hidden");
+  function triggerScanAnotherEmail() {
+    if (breachChartInstance) {
+      breachChartInstance.destroy();
+      breachChartInstance = null;
+    }
+    if (reportSection) reportSection.classList.add("hidden");
+    if (emailInput) {
       emailInput.value = "";
-      clearError();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      setTimeout(() => emailInput.focus(), 250);
-    });
+    }
+    clearError();
+    try {
+      sessionStorage.removeItem("echorisk_last_report");
+      sessionStorage.removeItem("echorisk_last_email");
+    } catch (e) {}
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    setTimeout(() => { if (emailInput) emailInput.focus(); }, 250);
+  }
+
+  if (btnScanAnother) {
+    btnScanAnother.addEventListener("click", triggerScanAnotherEmail);
   }
 
   if (btnPrintReport) {
@@ -947,6 +967,231 @@ document.addEventListener("DOMContentLoaded", () => {
         if (el && el.offsetTop <= pos) { setActiveNav(navItems[i].id); break; }
       }
     }, { passive: true });
+  }
+
+  // --- Cross-Tab & Cross-Page State Communication ---
+  window.handleScanAnotherEmail = triggerScanAnotherEmail;
+  window.handleBackToScanner = function() {
+    if (reportSection && !reportSection.classList.contains("hidden")) {
+      reportSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+  window.handleScrollToSection = function(targetId) {
+    scrollToTarget(targetId);
+  };
+
+  let navChannel = null;
+  try {
+    navChannel = new BroadcastChannel("echorisk_nav_channel");
+    navChannel.onmessage = (event) => {
+      if (!event.data || event.data.type !== "ECHORISK_ACTION") return;
+      if (event.data.action === "scan_another") {
+        triggerScanAnotherEmail();
+      } else if (event.data.action === "back_to_scanner") {
+        window.handleBackToScanner();
+      } else if (event.data.action === "scroll_to" && event.data.target) {
+        window.handleScrollToSection(event.data.target);
+      }
+    };
+  } catch (e) {}
+
+  window.addEventListener("message", (event) => {
+    if (!event.data || event.data.type !== "ECHORISK_ACTION") return;
+    if (event.data.action === "scan_another") {
+      triggerScanAnotherEmail();
+    } else if (event.data.action === "back_to_scanner") {
+      window.handleBackToScanner();
+    } else if (event.data.action === "scroll_to" && event.data.target) {
+      window.handleScrollToSection(event.data.target);
+    }
+  });
+
+  // --- Landing Page Saved State Restoration ---
+  if ($("scan-form")) {
+    let pendingAction = null;
+    try {
+      pendingAction = sessionStorage.getItem("echorisk_pending_action");
+      sessionStorage.removeItem("echorisk_pending_action");
+    } catch (e) {}
+
+    let savedReport = null;
+    let savedEmail = null;
+    try {
+      savedReport = sessionStorage.getItem("echorisk_last_report");
+      savedEmail = sessionStorage.getItem("echorisk_last_email");
+    } catch (e) {}
+
+    if (savedReport && pendingAction !== "scan_another") {
+      try {
+        const parsedReport = JSON.parse(savedReport);
+        renderScanReport(parsedReport, false, false);
+        if (emailInput && savedEmail) {
+          emailInput.value = savedEmail;
+        }
+      } catch (e) {
+        console.warn("Could not restore saved report:", e);
+      }
+    }
+
+    if (pendingAction === "scan_another") {
+      setTimeout(triggerScanAnotherEmail, 150);
+    } else if (pendingAction === "back_to_scanner") {
+      if (reportSection && !reportSection.classList.contains("hidden")) {
+        setTimeout(() => reportSection.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
+      }
+    } else if (window.location.hash) {
+      const hashId = window.location.hash.slice(1);
+      if ($(hashId)) {
+        setTimeout(() => scrollToTarget(hashId), 200);
+      }
+    }
+  }
+
+  // --- Breach Detail Page Return & Navigation Controller ---
+  const isBreachDetailPage = document.body.classList.contains("breach-detail-page") || !!$("dossier-breach-chart");
+
+  if (isBreachDetailPage) {
+    function navigateBackToMain(action, target = "hero") {
+      // 1. Broadcast to other open tabs
+      try {
+        if (!navChannel) navChannel = new BroadcastChannel("echorisk_nav_channel");
+        navChannel.postMessage({ type: "ECHORISK_ACTION", action, target });
+      } catch (e) {}
+
+      // 2. Direct opener communication if opened via View Details
+      let openerHandled = false;
+      if (window.opener && !window.opener.closed) {
+        try {
+          if (action === "scan_another") {
+            if (typeof window.opener.handleScanAnotherEmail === "function") {
+              window.opener.handleScanAnotherEmail();
+              openerHandled = true;
+            }
+          } else if (action === "back_to_scanner") {
+            if (typeof window.opener.handleBackToScanner === "function") {
+              window.opener.handleBackToScanner();
+              openerHandled = true;
+            }
+          } else if (action === "scroll_to") {
+            if (typeof window.opener.handleScrollToSection === "function") {
+              window.opener.handleScrollToSection(target);
+              openerHandled = true;
+            }
+          }
+          window.opener.postMessage({ type: "ECHORISK_ACTION", action, target }, "*");
+          openerHandled = true;
+          window.opener.focus();
+        } catch (err) {
+          console.warn("Direct opener call restricted:", err);
+        }
+      }
+
+      // If opener was notified, close this tab immediately to return to the original scan page
+      if (openerHandled || (window.opener && !window.opener.closed)) {
+        try {
+          window.close();
+          setTimeout(() => {
+            if (!document.hidden) {
+              fallbackNavigation(action, target);
+            }
+          }, 350);
+          return;
+        } catch (e) {}
+      }
+
+      fallbackNavigation(action, target);
+    }
+
+    function fallbackNavigation(action, target) {
+      if (action === "scan_another") {
+        try { sessionStorage.setItem("echorisk_pending_action", "scan_another"); } catch (e) {}
+        window.location.href = "/#hero";
+      } else if (action === "back_to_scanner") {
+        try { sessionStorage.setItem("echorisk_pending_action", "back_to_scanner"); } catch (e) {}
+        window.location.href = "/#report-section";
+      } else {
+        window.location.href = `/#${target}`;
+      }
+    }
+
+    // Attach listeners on breach detail page
+    const btnDossierScan = $("btn-dossier-scan");
+    if (btnDossierScan) {
+      btnDossierScan.addEventListener("click", (e) => {
+        e.preventDefault();
+        navigateBackToMain("scan_another", "hero");
+      });
+    }
+
+    const btnBackScanner = $("btn-back-scanner");
+    if (btnBackScanner) {
+      btnBackScanner.addEventListener("click", (e) => {
+        e.preventDefault();
+        navigateBackToMain("back_to_scanner", "report-section");
+      });
+    }
+
+    const detailNavHome = $("nav-home");
+    if (detailNavHome) {
+      detailNavHome.addEventListener("click", (e) => {
+        e.preventDefault();
+        navigateBackToMain("scroll_to", "hero");
+      });
+    }
+    const detailNavHow = $("nav-how");
+    if (detailNavHow) {
+      detailNavHow.addEventListener("click", (e) => {
+        e.preventDefault();
+        navigateBackToMain("scroll_to", "how-it-works");
+      });
+    }
+    const detailNavPasswords = $("nav-passwords");
+    if (detailNavPasswords) {
+      detailNavPasswords.addEventListener("click", (e) => {
+        e.preventDefault();
+        navigateBackToMain("scroll_to", "passwords");
+      });
+    }
+    const detailNavAbout = $("nav-about");
+    if (detailNavAbout) {
+      detailNavAbout.addEventListener("click", (e) => {
+        e.preventDefault();
+        navigateBackToMain("scroll_to", "about");
+      });
+    }
+
+    const detailBrand = document.querySelector(".navbar .brand");
+    if (detailBrand) {
+      detailBrand.addEventListener("click", (e) => {
+        e.preventDefault();
+        navigateBackToMain("scroll_to", "hero");
+      });
+    }
+
+    const breadcrumbHome = $("breadcrumb-home");
+    if (breadcrumbHome) {
+      breadcrumbHome.addEventListener("click", (e) => {
+        e.preventDefault();
+        navigateBackToMain("back_to_scanner", "report-section");
+      });
+    }
+
+    document.querySelectorAll(".footer-links-list a").forEach(a => {
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        const dataTarget = a.getAttribute("data-target");
+        const href = a.getAttribute("href") || "";
+        let target = "hero";
+        if (dataTarget) {
+          target = dataTarget;
+        } else if (href.includes("#")) {
+          target = href.split("#")[1];
+        }
+        navigateBackToMain("scroll_to", target);
+      });
+    });
   }
 
   // --- Initialize Incident Dossier Page Chart if on breach_detail page ---
