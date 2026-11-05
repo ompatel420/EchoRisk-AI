@@ -49,7 +49,6 @@ def check_domain_dns(domain: str) -> Tuple[bool, Optional[str]]:
     if d in ALLOWED_TEST_DOMAINS or d in POPULAR_DOMAINS:
         return True, None
     try:
-        socket.setdefaulttimeout(1.5)
         socket.getaddrinfo(domain, None)
         return True, None
     except socket.gaierror:
@@ -115,6 +114,8 @@ def mask_email(email: str) -> str:
     if not email or "@" not in email:
         return "hidden@anonymous"
     user, domain = email.split("@", 1)
+    if not user:
+        return f"*@{domain}"
     if len(user) <= 2:
         masked = user[0] + "*"
     else:
