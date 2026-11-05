@@ -23,16 +23,10 @@ for path in (BACKEND_DIR, PROJECT_ROOT):
 
 load_dotenv(os.path.join(PROJECT_ROOT, ".env"))
 
-try:
-    from backend.input_validator import validate_and_normalize_email, mask_email
-    from backend.breach_intel import check_email_breaches, get_breach_detail
-    from backend.ai_risk_engine import analyze_risk_with_claude
-    from backend.report_builder import assemble_final_report
-except ImportError:
-    from input_validator import validate_and_normalize_email, mask_email
-    from breach_intel import check_email_breaches, get_breach_detail
-    from ai_risk_engine import analyze_risk_with_claude
-    from report_builder import assemble_final_report
+from backend.input_validator import validate_and_normalize_email, mask_email
+from backend.breach_intel import check_email_breaches, get_breach_detail
+from backend.ai_risk_engine import analyze_risk_with_claude
+from backend.report_builder import assemble_final_report
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("echorisk-backend")

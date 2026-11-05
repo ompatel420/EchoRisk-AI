@@ -53,7 +53,9 @@ class TestInputValidator(unittest.TestCase):
     def test_typo_alias_suggestions(self):
         typo_cases = [
             ("user@gmial.com", "user@gmail.com"),
+            ("user@gmaill.com", "user@gmail.com"),
             ("user@hotmial.com", "user@hotmail.com"),
+            ("user@hotmaill.com", "user@hotmail.com"),
             ("user@outlok.com", "user@outlook.com"),
             ("user@protonmial.com", "user@proton.me")
         ]

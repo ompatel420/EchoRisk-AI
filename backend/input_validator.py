@@ -10,15 +10,32 @@ from typing import Tuple, Optional
 EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
 
 DOMAIN_ALIASES = {
-    "protonmial.com": "proton.me",
-    "protonmai.com": "proton.me",
-    "proton.cm": "proton.me",
+    # Gmail typos
     "gmial.com": "gmail.com",
     "gmai.com": "gmail.com",
     "gamil.com": "gmail.com",
+    "gmaill.com": "gmail.com",
+    "gmaik.com": "gmail.com",
+    "gmail.con": "gmail.com",
+    "gmail.coom": "gmail.com",
+    # Hotmail typos
     "hotmial.com": "hotmail.com",
+    "hotmai.com": "hotmail.com",
+    "hotmaill.com": "hotmail.com",
+    # Outlook typos
+    "outlok.com": "outlook.com",
+    "outloo.com": "outlook.com",
+    "outllok.com": "outlook.com",
+    # Yahoo typos
     "yaho.com": "yahoo.com",
-    "outlok.com": "outlook.com"
+    "yahooo.com": "yahoo.com",
+    # Proton typos
+    "protonmial.com": "proton.me",
+    "protonmai.com": "proton.me",
+    "proton.cm": "proton.me",
+    # iCloud typos
+    "icloud.cm": "icloud.com",
+    "iclou.com": "icloud.com",
 }
 
 POPULAR_DOMAINS = [
