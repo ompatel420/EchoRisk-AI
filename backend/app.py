@@ -47,6 +47,7 @@ app.config["MAX_CONTENT_LENGTH"] = 1 * 1024 * 1024  # 1 MB payload limit
 
 RATE_LIMIT_WINDOW = 60
 RATE_LIMIT_MAX_REQUESTS = 30
+TRUST_PROXY = os.environ.get("TRUST_PROXY", "false").lower() in ("true", "1", "yes")
 _ip_request_timestamps = defaultdict(list)
 _rate_limit_lock = Lock()
 
@@ -57,17 +58,24 @@ def error_response(msg: str, code: str, status_code: int = 400, **kwargs):
 
 
 def get_client_ip() -> str:
-    """Extracts client IP address safely, checking reverse-proxy headers."""
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
+    """Extracts client IP address safely, checking reverse-proxy headers only when proxy is trusted."""
+    if TRUST_PROXY:
+        forwarded = request.headers.get("X-Forwarded-For")
+        if forwarded:
+            return forwarded.split(",")[0].strip()
     return request.remote_addr or "127.0.0.1"
 
 
 def is_rate_limited(ip: str) -> bool:
-    """Thread-safe sliding window rate check with memory-leak cleanup."""
+    """Thread-safe sliding window rate check with periodic stale-IP memory cleanup."""
     now = time.time()
     with _rate_limit_lock:
+        # Prevent unbounded dictionary growth from one-off crawlers/visitors
+        if len(_ip_request_timestamps) > 500:
+            stale_ips = [k for k, v in _ip_request_timestamps.items() if not v or (now - v[-1] >= RATE_LIMIT_WINDOW)]
+            for k in stale_ips:
+                _ip_request_timestamps.pop(k, None)
+
         timestamps = [ts for ts in _ip_request_timestamps.get(ip, []) if now - ts < RATE_LIMIT_WINDOW]
         if not timestamps:
             _ip_request_timestamps.pop(ip, None)

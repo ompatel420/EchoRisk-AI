@@ -5,7 +5,9 @@ in verified data breaches, with normalization and demo mock support.
 Zero-cache policy: No breach records or queries are cached in memory or disk.
 """
 import os
+import time
 import logging
+from threading import Lock
 from datetime import datetime
 from typing import Dict, Any, List
 import requests
@@ -14,6 +16,11 @@ logger = logging.getLogger(__name__)
 
 XON_BASE_URL = os.environ.get("XPOSEDORNOT_API_URL", "https://api.xposedornot.com/v1")
 MOCK_MODE = os.environ.get("MOCK_MODE", "false").lower() in ("true", "1", "yes")
+
+_catalog_cache: Dict[str, Dict[str, Any]] = {}
+_catalog_last_fetched: float = 0.0
+_CATALOG_TTL_SECONDS = 3600  # 1 hour cache for public breach catalog metadata
+_catalog_lock = Lock()
 
 # Known common breach information fallback directory
 KNOWN_BREACHES: Dict[str, Dict[str, Any]] = {
@@ -92,7 +99,13 @@ def _get_request_headers() -> Dict[str, str]:
 
 
 def fetch_all_breaches_catalog() -> Dict[str, Dict[str, Any]]:
-    """Fetches the catalog of known data breaches from XposedOrNot dynamically on demand with zero caching."""
+    """Fetches and caches the public catalog of known data breaches from XposedOrNot (1-hour TTL)."""
+    global _catalog_cache, _catalog_last_fetched
+    now = time.time()
+    with _catalog_lock:
+        if _catalog_cache and (now - _catalog_last_fetched < _CATALOG_TTL_SECONDS):
+            return _catalog_cache
+
     catalog: Dict[str, Dict[str, Any]] = {}
     try:
         resp = requests.get(f"{XON_BASE_URL}/breaches", headers=_get_request_headers(), timeout=6)
@@ -103,9 +116,16 @@ def fetch_all_breaches_catalog() -> Dict[str, Dict[str, Any]]:
                 b_id = str(item.get("breachID") or item.get("breach_id") or item.get("name", "")).lower().strip()
                 if b_id:
                     catalog[b_id] = item
+            with _catalog_lock:
+                _catalog_cache = catalog
+                _catalog_last_fetched = now
+            return catalog
     except Exception as e:
         logger.warning(f"Could not fetch XposedOrNot breach catalog: {e}")
-    
+
+    with _catalog_lock:
+        if _catalog_cache:
+            return _catalog_cache
     return catalog
 
 
